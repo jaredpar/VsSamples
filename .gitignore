@@ -7,6 +7,7 @@
 
 # Binary files
 *.exe 
+*.dll
 *.dbg 
 *.pcb 
 *.ncb 
@@ -41,12 +42,11 @@ packages/
 # Directories 
 */obj/
 */bin/
-*/bin10/
-*/bin11/
 TestResults/
 */Debug/
 */Release/
-_ReSharper.VsVim
+Samples/HighlightCommentKinds/bin
+Samples/HighlightCommentKinds/obj
 
 # VS Binaries
 Microsoft.VisualStudio.CoreUtility.dll
