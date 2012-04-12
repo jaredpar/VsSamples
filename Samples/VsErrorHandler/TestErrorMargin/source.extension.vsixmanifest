@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Vsix xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="1.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2010">
+  <Identifier Id="TestErrorMargin.Microsoft.e0a64427-d87a-4268-9cb8-c71d991f1377">
+    <Name>TestErrorMargin</Name>
+    <Author>Jared Parsons</Author>
+    <Version>1.0</Version>
+    <Description xml:space="preserve">This is a sample margin extension to the Visual Studio Editor.</Description>
+    <Locale>1033</Locale>
+    <License>License.rtf</License>
+    <SupportedProducts>
+      <VisualStudio Version="10.0">
+        <Edition>Pro</Edition>
+      </VisualStudio>
+    </SupportedProducts>
+    <SupportedFrameworkRuntimeEdition MinVersion="4.0" MaxVersion="4.0" />
+  </Identifier>
+  <References />
+  <Content>
+    <MefComponent>|%CurrentProject%|</MefComponent>
+    <MefComponent>|VsErrorHandler|</MefComponent>
+  </Content>
+</Vsix>

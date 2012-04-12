@@ -1,0 +1,80 @@
+﻿<UserControl x:Class="VsErrorHandler.ErrorMarginControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="200" d:DesignWidth="400"
+             x:Name="errorMarginControl">
+    <UserControl.Resources>
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Margin" Value="2" />
+        </Style>
+        <Style x:Key="TextDisplay" TargetType="TextBox">
+            <Setter Property="Background" Value="Cornsilk" />
+            <Setter Property="IsReadOnly" Value="true" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid 
+        DataContext="{Binding ElementName=errorMarginControl}"
+        Background="Cornsilk" >
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="25" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <Image
+            Grid.Column="0"
+            Grid.Row="0"
+            Source="Images\Error.ico"
+            />
+
+        <TextBox
+            Grid.Row="0"
+            Grid.Column="1"
+            VerticalAlignment="Center"
+            Style="{StaticResource TextDisplay}"
+            Text="{Binding Path=HeaderText}" />
+
+        <Button
+            Grid.Row="0"
+            Grid.Column="2"
+            Style="{StaticResource ActionButton}"
+            Click="OnShowClick"
+            Content="Show" />
+
+        <Button
+            Grid.Row="0"
+            Grid.Column="3"
+            Style="{StaticResource ActionButton}"
+            Click="OnIgnoreClick"
+            Content="Ignore" />
+
+        <Button
+            Grid.Row="0"
+            Grid.Column="4"
+            Style="{StaticResource ActionButton}"
+            Click="OnIgnoreAllClick"
+            Content="Ignore All" />
+
+        <TextBox 
+            Grid.Row="1"
+            Grid.ColumnSpan="5"
+            Visibility="{Binding Path=ErrorTextVisibility}"
+            Style="{StaticResource TextDisplay}"
+            Text="{Binding Path=ErrorText}"
+            />
+
+    </Grid>
+</UserControl>

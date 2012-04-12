@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VsErrorHandler", "VsErrorHandler.csproj", "{BB1F8BCF-38DF-4900-B8B3-8BFA9BF3CD29}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestErrorMargin", "..\TestErrorMargin\TestErrorMargin.csproj", "{88005317-23D1-486E-BDB4-4799BDBE9340}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BB1F8BCF-38DF-4900-B8B3-8BFA9BF3CD29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB1F8BCF-38DF-4900-B8B3-8BFA9BF3CD29}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB1F8BCF-38DF-4900-B8B3-8BFA9BF3CD29}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB1F8BCF-38DF-4900-B8B3-8BFA9BF3CD29}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88005317-23D1-486E-BDB4-4799BDBE9340}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88005317-23D1-486E-BDB4-4799BDBE9340}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88005317-23D1-486E-BDB4-4799BDBE9340}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88005317-23D1-486E-BDB4-4799BDBE9340}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

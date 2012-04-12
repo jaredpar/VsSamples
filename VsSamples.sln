@@ -13,6 +13,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EditorUtilsTest", "EditorUt
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HighlightCommentKinds", "Samples\HighlightCommentKinds\HighlightCommentKinds.csproj", "{5C1123B5-2BF8-436C-8674-1C02359129E8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestErrorMargin", "Samples\VsErrorHandler\TestErrorMargin\TestErrorMargin.csproj", "{88005317-23D1-486E-BDB4-4799BDBE9340}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VsErrorHandler", "Samples\VsErrorHandler\VsErrorHandler\VsErrorHandler.csproj", "{BB1F8BCF-38DF-4900-B8B3-8BFA9BF3CD29}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +35,14 @@ Global
 		{5C1123B5-2BF8-436C-8674-1C02359129E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C1123B5-2BF8-436C-8674-1C02359129E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C1123B5-2BF8-436C-8674-1C02359129E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88005317-23D1-486E-BDB4-4799BDBE9340}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88005317-23D1-486E-BDB4-4799BDBE9340}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88005317-23D1-486E-BDB4-4799BDBE9340}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88005317-23D1-486E-BDB4-4799BDBE9340}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB1F8BCF-38DF-4900-B8B3-8BFA9BF3CD29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB1F8BCF-38DF-4900-B8B3-8BFA9BF3CD29}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB1F8BCF-38DF-4900-B8B3-8BFA9BF3CD29}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB1F8BCF-38DF-4900-B8B3-8BFA9BF3CD29}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
