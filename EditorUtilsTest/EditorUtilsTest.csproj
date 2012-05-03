@@ -120,6 +120,7 @@
     <Compile Include="Utils\TextUndoHistory.cs" />
     <Compile Include="Utils\TextUndoHistoryRegistry.cs" />
     <Compile Include="Utils\TextUndoTransaction.cs" />
+    <Compile Include="VersioningTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EditorUtils\EditorUtils.csproj">

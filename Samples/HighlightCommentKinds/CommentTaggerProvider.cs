@@ -16,7 +16,7 @@ namespace HighlightCommentKinds
         private readonly object _key = new object();
 
         [ImportingConstructor]
-        internal CommentTaggerProvider(ITaggerFactory taggerFactory)
+        internal CommentTaggerProvider([Import(EditorUtils.Constants.ContractName)] ITaggerFactory taggerFactory)
         {
             _taggerFactory = taggerFactory;
         }

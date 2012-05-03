@@ -167,7 +167,7 @@ namespace EditorUtils.Implementation.Outlining
     /// <summary>
     /// Responsible for managing instances of IAdhocOutliner for a given ITextBuffer
     /// </summary>
-    [Export(typeof(IAdhocOutlinerFactory))]
+    [Export(Constants.ContractName, typeof(IAdhocOutlinerFactory))]
     [Export(typeof(ITaggerProvider))]
     [ContentType("any")]
     [TextViewRole(PredefinedTextViewRoles.Structured)]

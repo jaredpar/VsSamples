@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.Utilities;
 
 namespace EditorUtils.Implementation.Tagging
 {
-    [Export(typeof(ITaggerFactory))]
+    [Export(Constants.ContractName, typeof(ITaggerFactory))]
     internal sealed class TaggerFactory : ITaggerFactory
     {
         ITagger<TTag> ITaggerFactory.CreateAsyncTaggerRaw<TData, TTag>(IAsyncTaggerSource<TData, TTag> asyncTaggerSource)

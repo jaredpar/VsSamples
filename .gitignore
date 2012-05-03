@@ -40,11 +40,11 @@ packages/
 *crunchsolution.cache
 
 # Directories 
-*/obj/
-*/bin/
+obj/
+bin/
 TestResults/
-*/Debug/
-*/Release/
+Debug/
+Release/
 Samples/HighlightCommentKinds/bin
 Samples/HighlightCommentKinds/obj
 
