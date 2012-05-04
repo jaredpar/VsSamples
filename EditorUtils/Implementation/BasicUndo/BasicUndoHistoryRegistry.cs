@@ -3,10 +3,15 @@ using System.ComponentModel.Composition;
 using System.Runtime.CompilerServices;
 using Microsoft.VisualStudio.Text.Operations;
 
-namespace EditorUtils.UnitTest.Utils
+namespace EditorUtils
 {
-    [Export(typeof(ITextUndoHistoryRegistry))]
-    public sealed class TextUndoHistoryRegistry : ITextUndoHistoryRegistry
+    /// <summary>
+    /// This class intentionally doesn't Export ITextUndoHistoryRegistry.  Doing that would conflict
+    /// with any hosted environment which provided an ITextUndoHistoryRegistry.  This class is 
+    /// intended to be a simple + non-default solution for hosts that don't
+    /// </summary>
+    [Export(Constants.ContractName, typeof(IBasicUndoHistoryRegistry))]
+    internal sealed class BasicTextUndoHistoryRegistry : ITextUndoHistoryRegistry, IBasicUndoHistoryRegistry
     {
         private readonly ConditionalWeakTable<object, ITextUndoHistory> _map = new ConditionalWeakTable<object, ITextUndoHistory>();
 
@@ -27,7 +32,7 @@ namespace EditorUtils.UnitTest.Utils
             ITextUndoHistory history;
             if (!_map.TryGetValue(context, out history))
             {
-                history = new TextUndoHistory();
+                history = new BasicUndoHistory();
                 _map.Add(context, history);
             }
             return history;
@@ -41,6 +46,11 @@ namespace EditorUtils.UnitTest.Utils
         public bool TryGetHistory(object context, out ITextUndoHistory history)
         {
             return _map.TryGetValue(context, out history);
+        }
+
+        ITextUndoHistoryRegistry IBasicUndoHistoryRegistry.TextUndoHistoryRegistry
+        {
+            get { return this; }
         }
     }
 }

@@ -56,6 +56,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\References\Microsoft.VisualStudio.Text.UI.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
@@ -65,10 +66,15 @@
     <Compile Include="AsyncTaggerSource.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Contract.cs" />
+    <Compile Include="EditorHost.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="IAdhocOutliner.cs" />
     <Compile Include="IAsyncTaggerSource.cs" />
     <Compile Include="IBasicTaggerSource.cs" />
+    <Compile Include="IBasicUndoHistoryRegistry.cs" />
+    <Compile Include="Implementation\BasicUndo\BasicUndoHistory.cs" />
+    <Compile Include="Implementation\BasicUndo\BasicUndoHistoryRegistry.cs" />
+    <Compile Include="Implementation\BasicUndo\BasicUndoTransaction.cs" />
     <Compile Include="Implementation\Outlining\AdhocOutliner.cs" />
     <Compile Include="Implementation\Tagging\AsyncTagger.cs" />
     <Compile Include="Implementation\Tagging\BasicTagger.cs" />
@@ -88,6 +94,7 @@
   <ItemGroup>
     <None Include="Key.snk" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

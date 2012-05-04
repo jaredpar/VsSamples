@@ -179,7 +179,7 @@ namespace EditorUtils.Implementation.Outlining
         private readonly ITaggerFactory _taggerFactory;
 
         [ImportingConstructor]
-        internal AdhocOutlinerFactory(ITaggerFactory taggerFactory)
+        internal AdhocOutlinerFactory([Import(Constants.ContractName)] ITaggerFactory taggerFactory)
         {
             _taggerFactory = taggerFactory;
         }

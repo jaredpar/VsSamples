@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using Microsoft.VisualStudio.Text.Operations;
 
-namespace EditorUtils.UnitTest.Utils
+namespace EditorUtils
 {
-    internal sealed class TextUndoTransaction : ITextUndoTransaction
+    internal sealed class BasicUndoTransaction : ITextUndoTransaction
     {
-        private readonly TextUndoHistory _textUndoHistory;
+        private readonly BasicUndoHistory _textUndoHistory;
         private readonly List<ITextUndoPrimitive> _primitiveList = new List<ITextUndoPrimitive>();
 
-        public TextUndoTransaction(TextUndoHistory textUndoHistory, string description)
+        public BasicUndoTransaction(BasicUndoHistory textUndoHistory, string description)
         {
             _textUndoHistory = textUndoHistory;
             Description = description;

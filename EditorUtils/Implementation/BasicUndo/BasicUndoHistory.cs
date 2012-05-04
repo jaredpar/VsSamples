@@ -4,16 +4,16 @@ using System.Diagnostics;
 using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.Utilities;
 
-namespace EditorUtils.UnitTest.Utils
+namespace EditorUtils
 {
     /// <summary>
     /// Provides a very simple ITextUndoHistory implementation.  Sufficient for us to test
     /// simple undo scenarios inside the unit tests
     /// </summary>
-    internal sealed class TextUndoHistory : ITextUndoHistory
+    internal sealed class BasicUndoHistory : ITextUndoHistory
     {
         private TextUndoHistoryState _state = TextUndoHistoryState.Idle;
-        private readonly Stack<TextUndoTransaction> _openTransactionStack = new Stack<TextUndoTransaction>();
+        private readonly Stack<BasicUndoTransaction> _openTransactionStack = new Stack<BasicUndoTransaction>();
         private readonly Stack<ITextUndoTransaction> _undoStack = new Stack<ITextUndoTransaction>();
         private readonly Stack<ITextUndoTransaction> _redoStack = new Stack<ITextUndoTransaction>();
         private readonly PropertyCollection _properties = new PropertyCollection();
@@ -94,7 +94,7 @@ namespace EditorUtils.UnitTest.Utils
 
         public ITextUndoTransaction CreateTransaction(string description)
         {
-            _openTransactionStack.Push(new TextUndoTransaction(this, description));
+            _openTransactionStack.Push(new BasicUndoTransaction(this, description));
             return _openTransactionStack.Peek();
         }
 
@@ -140,7 +140,7 @@ namespace EditorUtils.UnitTest.Utils
             }
         }
 
-        internal void OnTransactionClosed(TextUndoTransaction transaction, bool didComplete)
+        internal void OnTransactionClosed(BasicUndoTransaction transaction, bool didComplete)
         {
             if (_openTransactionStack.Count == 0 || transaction != _openTransactionStack.Peek())
             {
