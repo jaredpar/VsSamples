@@ -12,93 +12,26 @@ namespace EditorUtils
     /// </summary>
     internal sealed class BasicUndoHistory : ITextUndoHistory
     {
-        private TextUndoHistoryState _state = TextUndoHistoryState.Idle;
         private readonly Stack<BasicUndoTransaction> _openTransactionStack = new Stack<BasicUndoTransaction>();
         private readonly Stack<ITextUndoTransaction> _undoStack = new Stack<ITextUndoTransaction>();
         private readonly Stack<ITextUndoTransaction> _redoStack = new Stack<ITextUndoTransaction>();
         private readonly PropertyCollection _properties = new PropertyCollection();
+        private TextUndoHistoryState _state = TextUndoHistoryState.Idle;
+        private event EventHandler<TextUndoRedoEventArgs> _undoRedoHappened;
+        private event EventHandler<TextUndoTransactionCompletedEventArgs> _undoTransactionCompleted;
 
-        /// <summary>
-        /// Return 'true' here instead of actually looking at the redo stack count because
-        /// this is the behavior of the standard Visual Studio undo manager
-        /// </summary>
-        public bool CanRedo
-        {
-            get { return true; }
-        }
-
-        /// <summary>
-        /// Return 'true' here instead of actually looking at the redo stack count because
-        /// this is the behavior of the standard Visual Studio undo manager
-        /// </summary>
-        public bool CanUndo
-        {
-            get { return true; }
-        }
-
-        public string UndoDescription
-        {
-            get { throw new NotSupportedException(); }
-        }
-
-        /// <summary>
-        /// Another case where we could easily implement but Visual Studio does not
-        /// </summary>
-        public IEnumerable<ITextUndoTransaction> UndoStack
-        {
-            get { throw new NotSupportedException(); }
-        }
-
-        public PropertyCollection Properties
-        {
-            get { return _properties; }
-        }
-
-        public ITextUndoTransaction CurrentTransaction
+        internal ITextUndoTransaction CurrentTransaction
         {
             get { return _openTransactionStack.Count > 0 ? _openTransactionStack.Peek() : null; }
         }
 
-        public ITextUndoTransaction LastRedoTransaction
-        {
-            get { throw new NotSupportedException(); }
-        }
-
-        public ITextUndoTransaction LastUndoTransaction
-        {
-            get { throw new NotSupportedException(); }
-        }
-
-        public string RedoDescription
-        {
-            get { throw new NotSupportedException(); }
-        }
-
-        /// <summary>
-        /// Another case where we could easily implement but Visual Studio does not
-        /// </summary>
-        public IEnumerable<ITextUndoTransaction> RedoStack
-        {
-            get { throw new NotSupportedException(); }
-        }
-
-        public TextUndoHistoryState State
-        {
-            [DebuggerNonUserCode]
-            get { return _state; }
-        }
-
-        public event EventHandler<TextUndoRedoEventArgs> UndoRedoHappened;
-
-        public event EventHandler<TextUndoTransactionCompletedEventArgs> UndoTransactionCompleted;
-
-        public ITextUndoTransaction CreateTransaction(string description)
+        internal ITextUndoTransaction CreateTransaction(string description)
         {
             _openTransactionStack.Push(new BasicUndoTransaction(this, description));
             return _openTransactionStack.Peek();
         }
 
-        public void Redo(int count)
+        internal void Redo(int count)
         {
             try
             {
@@ -119,7 +52,7 @@ namespace EditorUtils
             }
         }
 
-        public void Undo(int count)
+        internal void Undo(int count)
         {
             try
             {
@@ -157,7 +90,7 @@ namespace EditorUtils
             if (_openTransactionStack.Count == 0)
             {
                 _undoStack.Push(transaction);
-                var list = UndoTransactionCompleted;
+                var list = _undoTransactionCompleted;
                 if (list != null)
                 {
                     list(this, new TextUndoTransactionCompletedEventArgs(null, TextUndoTransactionCompletionResult.TransactionAdded));
@@ -172,10 +105,9 @@ namespace EditorUtils
             }
         }
 
-
         private void RaiseUndoRedoHappened()
         {
-            var list = UndoRedoHappened;
+            var list = _undoRedoHappened;
             if (list != null)
             {
                 // Note: Passing null here as this is what Visual Studio does
@@ -183,5 +115,119 @@ namespace EditorUtils
             }
         }
 
+
+
+        #region ITextUndoHistory
+
+        /// <summary>
+        /// Return 'true' here instead of actually looking at the redo stack count because
+        /// this is the behavior of the standard Visual Studio undo manager
+        /// </summary>
+        bool ITextUndoHistory.CanRedo
+        {
+            get { return true; }
+        }
+
+        /// <summary>
+        /// Return 'true' here instead of actually looking at the redo stack count because
+        /// this is the behavior of the standard Visual Studio undo manager
+        /// </summary>
+        bool ITextUndoHistory.CanUndo
+        {
+            get { return true; }
+        }
+
+        ITextUndoTransaction ITextUndoHistory.CreateTransaction(string description)
+        {
+            return CreateTransaction(description);
+        }
+
+        ITextUndoTransaction ITextUndoHistory.CurrentTransaction
+        {
+            get { return CurrentTransaction; }
+        }
+
+        /// <summary>
+        /// Easy to implement but not supported by Visual Studio
+        /// </summary>
+        ITextUndoTransaction ITextUndoHistory.LastRedoTransaction
+        {
+            get { throw new NotSupportedException(); }
+        }
+
+        /// <summary>
+        /// Easy to implement but not supported by Visual Studio
+        /// </summary>
+        ITextUndoTransaction ITextUndoHistory.LastUndoTransaction
+        {
+            get { throw new NotSupportedException(); }
+        }
+
+        void ITextUndoHistory.Redo(int count)
+        {
+            Redo(count);
+        }
+
+        /// <summary>
+        /// Easy to implement but not supported by Visual Studio
+        /// </summary>
+        string ITextUndoHistory.RedoDescription
+        {
+            get { throw new NotSupportedException(); }
+        }
+
+        /// <summary>
+        /// Easy to implement but not supported by Visual Studio
+        /// </summary>
+        IEnumerable<ITextUndoTransaction> ITextUndoHistory.RedoStack
+        {
+            get { throw new NotSupportedException(); }
+        }
+
+        TextUndoHistoryState ITextUndoHistory.State
+        {
+            [DebuggerNonUserCode]
+            get { return _state; }
+        }
+
+        void ITextUndoHistory.Undo(int count)
+        {
+            Undo(count);
+        }
+
+        /// <summary>
+        /// Easy to implement but not supported by Visual Studio
+        /// </summary>
+        string ITextUndoHistory.UndoDescription
+        {
+            get { throw new NotSupportedException(); }
+        }
+
+        event EventHandler<TextUndoRedoEventArgs> ITextUndoHistory.UndoRedoHappened
+        {
+            add { _undoRedoHappened += value; }
+            remove { _undoRedoHappened -= value; }
+        }
+
+        /// <summary>
+        /// Easy to implement but not supported by Visual Studio
+        /// </summary>
+        IEnumerable<ITextUndoTransaction> ITextUndoHistory.UndoStack
+        {
+            get { throw new NotSupportedException(); }
+        }
+
+        event EventHandler<TextUndoTransactionCompletedEventArgs> ITextUndoHistory.UndoTransactionCompleted
+        {
+            add { _undoTransactionCompleted += value; }
+            remove { _undoTransactionCompleted -= value; }
+        }
+
+        PropertyCollection IPropertyOwner.Properties
+        {
+            get { return _properties; }
+        }
+
+        #endregion
     }
 }

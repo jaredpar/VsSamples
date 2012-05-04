@@ -9,13 +9,26 @@ namespace EditorUtils
         private readonly BasicUndoHistory _textUndoHistory;
         private readonly List<ITextUndoPrimitive> _primitiveList = new List<ITextUndoPrimitive>();
 
-        public BasicUndoTransaction(BasicUndoHistory textUndoHistory, string description)
+        internal string Description
+        {
+            get;
+            set;
+        }
+
+        internal List<ITextUndoPrimitive> UndoPrimitives
+        {
+            get { return _primitiveList; }
+        }
+
+        internal BasicUndoTransaction(BasicUndoHistory textUndoHistory, string description)
         {
             _textUndoHistory = textUndoHistory;
             Description = description;
         }
 
-        public void AddUndo(ITextUndoPrimitive undo)
+        #region ITextUndoTransaction
+
+        void ITextUndoTransaction.AddUndo(ITextUndoPrimitive undo)
         {
             _primitiveList.Add(undo);
         }
@@ -23,7 +36,7 @@ namespace EditorUtils
         /// <summary>
         /// Visual Studio implementation throw so duplicate here
         /// </summary>
-        public bool CanRedo
+        bool ITextUndoTransaction.CanRedo
         {
             get { throw new NotSupportedException(); }
         }
@@ -31,50 +44,54 @@ namespace EditorUtils
         /// <summary>
         /// Visual Studio implementation throw so duplicate here
         /// </summary>
-        public bool CanUndo
+        bool ITextUndoTransaction.CanUndo
         {
             get { throw new NotSupportedException(); }
         }
 
-        public ITextUndoHistory History
+        ITextUndoHistory ITextUndoTransaction.History
         {
             get { return _textUndoHistory; }
         }
 
-        public IMergeTextUndoTransactionPolicy MergePolicy
+        IMergeTextUndoTransactionPolicy ITextUndoTransaction.MergePolicy
         {
             get;
             set;
         }
 
-        public ITextUndoTransaction Parent
+        ITextUndoTransaction ITextUndoTransaction.Parent
         {
             get { throw new NotSupportedException(); }
         }
 
-        public IList<ITextUndoPrimitive> UndoPrimitives
+        IList<ITextUndoPrimitive> ITextUndoTransaction.UndoPrimitives
         {
-            get { return _primitiveList; }
+            get { return UndoPrimitives; }
         }
 
-        public UndoTransactionState State
+        UndoTransactionState ITextUndoTransaction.State
         {
             get { throw new NotSupportedException(); }
         }
 
-        public string Description { get; set; }
+        string ITextUndoTransaction.Description
+        {
+            get { return Description; }
+            set { Description = value; }
+        }
 
-        public void Cancel()
+        void ITextUndoTransaction.Cancel()
         {
             _textUndoHistory.OnTransactionClosed(this, didComplete: false);
         }
 
-        public void Complete()
+        void ITextUndoTransaction.Complete()
         {
             _textUndoHistory.OnTransactionClosed(this, didComplete: true);
         }
 
-        public void Do()
+        void ITextUndoTransaction.Do()
         {
             for (var i = 0; i < _primitiveList.Count; i++)
             {
@@ -82,7 +99,7 @@ namespace EditorUtils
             }
         }
 
-        public void Undo()
+        void ITextUndoTransaction.Undo()
         {
             for (var i = _primitiveList.Count - 1; i >= 0; i--)
             {
@@ -90,9 +107,15 @@ namespace EditorUtils
             }
         }
 
-        public void Dispose()
+        #endregion
+
+        #region IDisposable
+
+        void IDisposable.Dispose()
         {
             _textUndoHistory.OnTransactionClosed(this, didComplete: false);
         }
+
+        #endregion
     }
 }

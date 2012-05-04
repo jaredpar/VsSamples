@@ -15,19 +15,21 @@ namespace EditorUtils
     {
         private readonly ConditionalWeakTable<object, ITextUndoHistory> _map = new ConditionalWeakTable<object, ITextUndoHistory>();
 
-        public void AttachHistory(object context, ITextUndoHistory history)
+        #region ITextUndoHistoryRegistry
+
+        void ITextUndoHistoryRegistry.AttachHistory(object context, ITextUndoHistory history)
         {
             _map.Add(context, history);
         }
 
-        public ITextUndoHistory GetHistory(object context)
+        ITextUndoHistory ITextUndoHistoryRegistry.GetHistory(object context)
         {
             ITextUndoHistory history;
             _map.TryGetValue(context, out history);
             return history;
         }
 
-        public ITextUndoHistory RegisterHistory(object context)
+        ITextUndoHistory ITextUndoHistoryRegistry.RegisterHistory(object context)
         {
             ITextUndoHistory history;
             if (!_map.TryGetValue(context, out history))
@@ -38,19 +40,25 @@ namespace EditorUtils
             return history;
         }
 
-        public void RemoveHistory(ITextUndoHistory history)
+        void ITextUndoHistoryRegistry.RemoveHistory(ITextUndoHistory history)
         {
             throw new NotImplementedException();
         }
 
-        public bool TryGetHistory(object context, out ITextUndoHistory history)
+        bool ITextUndoHistoryRegistry.TryGetHistory(object context, out ITextUndoHistory history)
         {
             return _map.TryGetValue(context, out history);
         }
+
+        #endregion
+
+        #region IBasciUndoHistoryRegistry
 
         ITextUndoHistoryRegistry IBasicUndoHistoryRegistry.TextUndoHistoryRegistry
         {
             get { return this; }
         }
+
+        #endregion
     }
 }
