@@ -20,9 +20,9 @@ namespace EditorUtils
     /// testing. Any test base can derive from this and use the Create* methods to get
     /// ITextBuffer instances to run their tests against. 
     /// </summary>
-    public abstract class EditorHost
+    public class EditorHost
     {
-        #region TextUndoHistoryRegistryCatalog
+        #region Undo MEF Registration
 
         /// <summary>
         /// In order to host the editor we need to provide an ITextUndoHistory export.  However 
@@ -124,11 +124,9 @@ namespace EditorUtils
             }
         }
 
-
         #endregion
 
-
-        private static readonly string[] s_editorComponents =
+        private static readonly string[] EditorComponents =
             new []
             {
                 // Core editor components
@@ -225,22 +223,9 @@ namespace EditorUtils
             get { return _taggerFactory; }
         }
 
-        // TODO: Put this in the CTOR? 
-        protected void EnsureContainer()
+        public EditorHost()
         {
-            _compositionContainer = GetOrCreateCompositionContainer();
-            _textBufferFactoryService = _compositionContainer.GetExportedValue<ITextBufferFactoryService>();
-            _textEditorFactoryService = _compositionContainer.GetExportedValue<ITextEditorFactoryService>();
-            _projectionBufferFactoryService = _compositionContainer.GetExportedValue<IProjectionBufferFactoryService>();
-            _smartIndentationService = _compositionContainer.GetExportedValue<ISmartIndentationService>();
-            _editorOperationsFactoryService = _compositionContainer.GetExportedValue<IEditorOperationsFactoryService>();
-            _editorOptionsFactoryService = _compositionContainer.GetExportedValue<IEditorOptionsFactoryService>();
-            _textSearchService = _compositionContainer.GetExportedValue<ITextSearchService>();
-            _outliningManagerService = _compositionContainer.GetExportedValue<IOutliningManagerService>();
-            _textBufferUndoManagerProvider = _compositionContainer.GetExportedValue<ITextBufferUndoManagerProvider>();
-            _contentTypeRegistryService = _compositionContainer.GetExportedValue<IContentTypeRegistryService>();
-            _adhocOutlinerFactory = _compositionContainer.GetExportedValue<IAdhocOutlinerFactory>(Constants.ContractName);
-            _taggerFactory = _compositionContainer.GetExportedValue<ITaggerFactory>(Constants.ContractName);
+            Reset();
         }
 
         /// <summary>
@@ -324,6 +309,26 @@ namespace EditorUtils
         }
 
         /// <summary>
+        /// Fully reset the composition container and all exported values
+        /// </summary>
+        protected void Reset()
+        {
+            _compositionContainer = GetOrCreateCompositionContainer();
+            _textBufferFactoryService = _compositionContainer.GetExportedValue<ITextBufferFactoryService>();
+            _textEditorFactoryService = _compositionContainer.GetExportedValue<ITextEditorFactoryService>();
+            _projectionBufferFactoryService = _compositionContainer.GetExportedValue<IProjectionBufferFactoryService>();
+            _smartIndentationService = _compositionContainer.GetExportedValue<ISmartIndentationService>();
+            _editorOperationsFactoryService = _compositionContainer.GetExportedValue<IEditorOperationsFactoryService>();
+            _editorOptionsFactoryService = _compositionContainer.GetExportedValue<IEditorOptionsFactoryService>();
+            _textSearchService = _compositionContainer.GetExportedValue<ITextSearchService>();
+            _outliningManagerService = _compositionContainer.GetExportedValue<IOutliningManagerService>();
+            _textBufferUndoManagerProvider = _compositionContainer.GetExportedValue<ITextBufferUndoManagerProvider>();
+            _contentTypeRegistryService = _compositionContainer.GetExportedValue<IContentTypeRegistryService>();
+            _adhocOutlinerFactory = _compositionContainer.GetExportedValue<IAdhocOutlinerFactory>(Constants.ContractName);
+            _taggerFactory = _compositionContainer.GetExportedValue<ITaggerFactory>(Constants.ContractName);
+        }
+
+        /// <summary>
         /// Get the Catalog parts which are necessary to spin up instances of the editor
         /// </summary>
         protected static List<ComposablePartCatalog> GetEditorCatalog()
@@ -355,7 +360,7 @@ namespace EditorUtils
         {
             try
             {
-                foreach (var name in s_editorComponents)
+                foreach (var name in EditorComponents)
                 {
                     var simpleName = name.Substring(0, name.Length - 4);
                     var qualifiedName = simpleName + ", Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL";

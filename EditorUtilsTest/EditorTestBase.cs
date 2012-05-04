@@ -12,7 +12,7 @@ namespace EditorUtils.UnitTest
         [SetUp]
         public virtual void SetupBase()
         {
-            base.EnsureContainer();
+
         }
 
         [TearDown]
