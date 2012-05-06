@@ -17,4 +17,7 @@
     <copyright>Copyright 2012</copyright>
     <tags>VisualStudio</tags>
   </metadata>
+  <files>
+    <file src="Install.ps1" target="tools" /> 
+  </files>
 </package>

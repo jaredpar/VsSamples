@@ -63,24 +63,34 @@ namespace EditorUtils
             return new SnapshotSpan(snapshot, start, length);
         }
 
-        #endregion
-
-        #region ITextView
-
         /// <summary>
-        /// Return the overaching SnapshotLineRange for the visible lines in the ITextView
+        /// Get the SnapshotPoint for the given position within the ITextSnapshot
         /// </summary>
-        public static SnapshotLineRange? GetVisibleSnapshotLineRange(this ITextView textView)
+        public static SnapshotPoint GetPoint(this ITextSnapshot snapshot, int position)
         {
-            if (textView.InLayout)
-            {
-                return null;
-            }
-            var snapshot = textView.TextSnapshot;
-            var lines = textView.TextViewLines;
-            var startLine = lines.FirstVisibleLine.Start.GetContainingLine().LineNumber;
-            var lastLine = lines.LastVisibleLine.End.GetContainingLine().LineNumber;
-            return SnapshotLineRange.CreateForLineNumberRange(textView.TextSnapshot, startLine, lastLine);
+            return new SnapshotPoint(snapshot, position);
+        }
+
+        public static SnapshotPoint GetPointInLine(this ITextSnapshot snapshot, int line, int column)
+        {
+            var snapshotLine = snapshot.GetLineFromLineNumber(line);
+            return snapshotLine.Start.Add(column);
+        }
+
+        public static SnapshotPoint GetStartPoint(this ITextSnapshot snapshot)
+        {
+            return new SnapshotPoint(snapshot, 0);
+        }
+
+        public static SnapshotPoint GetEndPoint(this ITextSnapshot snapshot)
+        {
+            return new SnapshotPoint(snapshot, snapshot.Length);
+        }
+
+        public static SnapshotLineRange GetLineRange(this ITextSnapshot snapshot, int startLine, int endLine = -1)
+        {
+            endLine = endLine >= 0 ? endLine : startLine;
+            return SnapshotLineRange.CreateForLineNumberRange(snapshot, startLine, endLine).Value;
         }
 
         #endregion
@@ -101,6 +111,106 @@ namespace EditorUtils
             }
 
             return new [] { textBuffer };
+        }
+
+        public static SnapshotSpan GetExtent(this ITextBuffer textBuffer)
+        {
+            return textBuffer.CurrentSnapshot.GetExtent();
+        }
+
+        public static SnapshotPoint GetPoint(this ITextBuffer textBuffer, int position)
+        {
+            return textBuffer.CurrentSnapshot.GetPoint(position);
+        }
+
+        public static SnapshotPoint GetPointInLine(this ITextBuffer textBuffer, int line, int column)
+        {
+            return textBuffer.CurrentSnapshot.GetPointInLine(line, column);
+        }
+
+        public static SnapshotSpan GetSpan(this ITextBuffer textBuffer, int start, int length)
+        {
+            return textBuffer.CurrentSnapshot.GetSpan(start, length);
+        }
+
+        public static SnapshotLineRange GetLineRange(this ITextBuffer textBuffer, int startLine, int endLine = -1)
+        {
+            return textBuffer.CurrentSnapshot.GetLineRange(startLine, endLine);
+        }
+
+        public static void SetText(this ITextBuffer buffer, params string[] lines)
+        {
+            var text = String.Join(Environment.NewLine, lines);
+            var edit = buffer.CreateEdit(EditOptions.DefaultMinimalChange, 0, null);
+            edit.Replace(new Span(0, buffer.CurrentSnapshot.Length), text);
+            edit.Apply();
+        }
+
+        #endregion
+
+        #region ITextView
+
+        /// <summary>
+        /// Return the overaching SnapshotLineRange for the visible lines in the ITextView
+        /// </summary>
+        public static SnapshotLineRange? GetVisibleSnapshotLineRange(this ITextView textView)
+        {
+            if (textView.InLayout)
+            {
+                return null;
+            }
+            var snapshot = textView.TextSnapshot;
+            var lines = textView.TextViewLines;
+            var startLine = lines.FirstVisibleLine.Start.GetContainingLine().LineNumber;
+            var lastLine = lines.LastVisibleLine.End.GetContainingLine().LineNumber;
+            return SnapshotLineRange.CreateForLineNumberRange(textView.TextSnapshot, startLine, lastLine);
+        }
+
+        public static SnapshotPoint GetCaretPoint(this ITextView textView)
+        {
+            return textView.Caret.Position.BufferPosition;
+        }
+
+        public static ITextSnapshotLine GetCaretLine(this ITextView textView)
+        {
+            return textView.Caret.Position.BufferPosition.GetContainingLine();
+        }
+
+         /// <summary>
+        /// Move the caret to the given position in the ITextView
+        /// </summary>
+        public static CaretPosition MoveCaretTo(this ITextView textView, int position)
+        {
+            return textView.Caret.MoveTo(new SnapshotPoint(textView.TextSnapshot, position));
+        }
+
+        /// <summary>
+        /// Move the caret to the given position in the ITextView with the set amount of virtual 
+        /// spaces
+        /// </summary>
+        public static void MoveCaretTo(this ITextView textView, int position, int virtualSpaces)
+        {
+            var point = new SnapshotPoint(textView.TextSnapshot, position);
+            var virtualPoint = new VirtualSnapshotPoint(point, virtualSpaces);
+            textView.Caret.MoveTo(virtualPoint);
+        }
+
+        public static CaretPosition MoveCaretToLine(this ITextView textView, int lineNumber)
+        {
+            var snapshotLine = textView.TextSnapshot.GetLineFromLineNumber(lineNumber);
+            return MoveCaretTo(textView, snapshotLine.Start.Position);
+        }
+
+        public static CaretPosition MoveCaretToLine(this ITextView textView, int lineNumber, int column)
+        {
+            var snapshotLine = textView.TextSnapshot.GetLineFromLineNumber(lineNumber);
+            var point = snapshotLine.Start.Add(column);
+            return MoveCaretTo(textView, point.Position);
+        }
+
+        public static void SetText(this ITextView textView, params string[] lines)
+        {
+            textView.TextBuffer.SetText(lines);
         }
 
         #endregion
