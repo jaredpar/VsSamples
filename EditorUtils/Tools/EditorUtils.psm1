@@ -17,7 +17,8 @@ function Get-ManifestFilePathCore() {
         }
     }
 
-    # Now dig into any child project items
+    # Now dig into any child project items.  Guid taken from
+    #   http://msdn.microsoft.com/en-us/library/bb166496.aspx
     foreach ($item in $current.ProjectItems) {
         $kind = $item.Kind;
         if ($kind -eq "{6bb5f8ef-4483-11d3-8bcf-00c04f8ec28c}") {
@@ -147,7 +148,7 @@ function Test-Include() {
 
     $dllWithVersion = "{0}={1}" -f $dll, $version;
     if (-not (Test-Reference $dllWithVersion $list)) {
-        Write-Host "Invalid reference $dll in $project"
+        Write-Host "Invalid reference $dll $version in $project"
     }
 }
 
@@ -215,6 +216,13 @@ function Test-ProjectFile() {
 
 function Test-AllProjectFile() {
     foreach ($project in $dte.Solution.Projects) {
+
+        # Don't dig into solution folders.  Guid taken from 
+        #   http://msdn.microsoft.com/en-us/library/hb23x61k(v=VS.80).aspx
+        if ($project.Kind -eq "{66A26720-8FB5-11D2-AA7E-00C04F688DDE}") {
+            continue;
+        }
+
         Test-ProjectFile $project
     }
 }
