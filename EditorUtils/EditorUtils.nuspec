@@ -18,6 +18,7 @@
     <tags>VisualStudio</tags>
   </metadata>
   <files>
-    <file src="Install.ps1" target="tools" /> 
+    <file src="Tools\*ps1" target="tools" /> 
+    <file src="Tools\*psm1" target="tools" /> 
   </files>
 </package>
