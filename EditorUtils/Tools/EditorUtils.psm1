@@ -84,7 +84,7 @@ $listAll = @(
     "System.Xaml=",
     "WindowsBase=",
     "Microsoft.CSharp=",
-    "EditorUtils="
+    "EditorUtils=*"
 )
 
 # Types specific to Dev10
@@ -108,28 +108,47 @@ $list11 = $list11 + $listAll
 # through other interfaces
 $listTest = @(
     "Microsoft.VisualStudio.Platform.VSEditor=10.0.0.0",
-    "Moq=4.0.10827.0",
-    "nunit.framework=2.6.0.12051"
+    "Moq=*",
+    "nunit.framework=*"
 )
 $listTest = $listTest + $listAll + $list10
 
 function Test-Reference() {
     param ([string]$dll = $(throw "Need a dll name to check"),
+           [string]$version = $(throw "Need a version to check"),
            $list = $(throw "Need a target list"))
 
+    $dllWithVersion = "{0}={1}" -f $dll,$version
     foreach ($validDll in $list) {
-        if ($validDll -eq $dll) {
-            return $true;
+        if ($validDll -eq $dllWithVersion) {
+            return
         }
 
-        if ($validDll.StartsWith($dll)) {
-            $all = $validDll.Split('=')
-            Write-Host "`tWarning: Reference to $($all[0]) is lacking a specific version, expected $($all[1])"
-            return $true
+        $all = $validDll.Split("=")
+        $validName = $all[0]
+        $validVersion = $all[1]
+
+        if ($validName -eq $dll) {
+
+            # If the DLL is fine at any version then the simple name match
+            # is sufficient
+            if ($validVersion -eq "*") {
+                return
+            }
+
+            # If the DLL reference is lacking a specific version then warn the user
+            if ($version -eq "") {
+                Write-Host "`tWarning: Reference to $validDll is lacking a specific version, expected $validVersion"
+                return
+            }
+
+            # Otherwise the versions are mismatched
+            Write-Host "`tError: Reference to $validDll has wrong version. Expected $validVersion but found $version"
+            return
         }
     }
 
-    return $false;
+    Write-Host "`tError: Invalid reference $dll $version in $project"
 }
 
 function Test-Include() {
@@ -147,9 +166,7 @@ function Test-Include() {
     }
 
     $dllWithVersion = "{0}={1}" -f $dll, $version;
-    if (-not (Test-Reference $dllWithVersion $list)) {
-        Write-Host "Invalid reference $dll $version in $project"
-    }
+    Test-Reference $dll $version $list
 }
 
 ###############################################################################
@@ -174,8 +191,21 @@ function Test-Include() {
 #   <VisualStudioTarget>Dev11</VisualStudioTarget>
 #
 ###############################################################################
-function Test-ProjectFile() {
-    param ($project = $(throw "Need a DTE Project object"))
+function Test-Project() {
+    param ($project = $(throw "Need a project argument"), 
+           $target = $null)
+
+    # Allow the project name to be passed by string
+    if ($project -is [string]) {
+        if ($project -eq "*") {
+            foreach ($p in Get-Project "*") {
+                Test-Project $p
+            }
+            return;
+        }
+
+        $project = Get-Project $project
+    }
 
     $ns = @{
         msb = "http://schemas.microsoft.com/developer/msbuild/2003"
@@ -183,23 +213,26 @@ function Test-ProjectFile() {
 
     $path = $project.FullName
     $name = split-path -leaf $path
-    write-host "Checking $name"
+    write-host "Testing $name"
 
-    $x = [xml](gc $path) 
-    $result = $x | Select-Xml -xpath "//msb:VisualStudioTarget" -namespace $ns
-    if ($result -eq $null) {
-        Write-Host "`tWarning: No VisualStudioTarget Element found, assuming all version compliance"
-        $version = "Dev10"
-    } else {
-        $version = $result.Node.get_InnerText()
+    # If not target is passed then read the target from the project file
+    if ($target -eq $null) {
+        $x = [xml](gc $path) 
+        $result = $x | Select-Xml -xpath "//msb:VisualStudioTarget" -namespace $ns
+        if ($result -eq $null) {
+            Write-Host "`tWarning: No VisualStudioTarget Element found, assuming all version compliance"
+            $target = "Dev10"
+        } else {
+            $target = $result.Node.get_InnerText()
+        }
     }
         
-    switch ($version) {
+    switch ($target) {
         "all" { $list = $listAll }
         "test" { $list = $listTest }
         "Dev10" { $list = $list10 }
         "Dev11" { $list = $list11 }
-        default { Write-Error "Unrecognized version: $version" }
+        default { Write-Error "Unrecognized target: $target" }
     }
 
     foreach ($line in gc $path) {
@@ -214,19 +247,5 @@ function Test-ProjectFile() {
     }
 }
 
-function Test-AllProjectFile() {
-    foreach ($project in $dte.Solution.Projects) {
-
-        # Don't dig into solution folders.  Guid taken from 
-        #   http://msdn.microsoft.com/en-us/library/hb23x61k(v=VS.80).aspx
-        if ($project.Kind -eq "{66A26720-8FB5-11D2-AA7E-00C04F688DDE}") {
-            continue;
-        }
-
-        Test-ProjectFile $project
-    }
-}
-
 Export-ModuleMember Get-ManifestFilePath
-Export-ModuleMember Test-ProjectFile
-Export-ModuleMember Test-AllProjectFile
+Export-ModuleMember Test-Project
