@@ -3,19 +3,17 @@ using EditorUtils.Implementation.Tagging;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
 using Moq;
-using NUnit.Framework;
+using Xunit;
 
 namespace EditorUtils.UnitTest
 {
-    [TestFixture]
-    public sealed class CountedTaggerTest : EditorTestBase
+    public sealed class CountedTaggerTest : EditorHost
     {
-        private MockRepository _factory;
-        private object _key;
-        private PropertyCollection _propertyCollection;
+        private readonly MockRepository _factory;
+        private readonly object _key;
+        private readonly PropertyCollection _propertyCollection;
 
-        [SetUp]
-        public void Setup()
+        public CountedTaggerTest()
         {
             _factory = new MockRepository(MockBehavior.Strict);
             _key = new object();
@@ -31,7 +29,7 @@ namespace EditorUtils.UnitTest
         /// <summary>
         /// First create on an key should actually call the create function
         /// </summary>
-        [Test]
+        [Fact]
         public void Create_DoCreate()
         {
             var didRun = false;
@@ -43,13 +41,13 @@ namespace EditorUtils.UnitTest
                     didRun = true;
                     return _factory.Create<ITagger<TextMarkerTag>>().Object;
                 });
-            Assert.IsTrue(didRun);
+            Assert.True(didRun);
         }
 
         /// <summary>
         /// Second create should just grab the value from the property collection
         /// </summary>
-        [Test]
+        [Fact]
         public void Create_GetFromCache()
         {
             var runCount = 0;
@@ -61,15 +59,15 @@ namespace EditorUtils.UnitTest
                 };
             var result1 = Create(_key, _propertyCollection, func);
             var result2 = Create(_key, _propertyCollection, func);
-            Assert.AreEqual(1, runCount);
-            Assert.AreNotSame(result1, result2);
-            Assert.AreSame(result1.Tagger, result2.Tagger);
+            Assert.Equal(1, runCount);
+            Assert.NotSame(result1, result2);
+            Assert.Same(result1.Tagger, result2.Tagger);
         }
 
         /// <summary>
         /// Disposing the one containing CountedTagger should dispose the underlying instance
         /// </summary>
-        [Test]
+        [Fact]
         public void Dispose_OneInstance()
         {
             var tagger = _factory.Create<ITagger<TextMarkerTag>>();
@@ -84,7 +82,7 @@ namespace EditorUtils.UnitTest
         /// <summary>
         /// Must dispose all of the outer CountedTagger instances before the inner ITagger is disposed
         /// </summary>
-        [Test]
+        [Fact]
         public void Dispose_ManyInstance()
         {
             var tagger = _factory.Create<ITagger<TextMarkerTag>>();

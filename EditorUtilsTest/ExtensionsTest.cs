@@ -2,14 +2,13 @@
 using System.Linq;
 using Microsoft.VisualStudio.Text.Projection;
 using Microsoft.VisualStudio.Utilities;
-using NUnit.Framework;
+using Xunit;
 
 namespace EditorUtils.UnitTest
 {
-    [TestFixture]
-    public sealed class ExtensionsTest : EditorTestBase
+    public sealed class ExtensionsTest : EditorHost
     {
-        [Test]
+        [Fact]
         public void GetSourceBuffersRecursive_Simple()
         {
             var textBuffer1 = CreateTextBuffer("hello");
@@ -18,14 +17,14 @@ namespace EditorUtils.UnitTest
                 textBuffer1.GetExtent(),
                 textBuffer2.GetExtent());
 
-            Assert.AreEqual("hello world", projectionBuffer.GetLine(0).GetText());
+            Assert.Equal("hello world", projectionBuffer.GetLine(0).GetText());
             var all = projectionBuffer.GetSourceBuffersRecursive().ToList();
-            Assert.AreEqual(2, all.Count);
-            Assert.IsTrue(all.Contains(textBuffer1));
-            Assert.IsTrue(all.Contains(textBuffer2));
+            Assert.Equal(2, all.Count);
+            Assert.True(all.Contains(textBuffer1));
+            Assert.True(all.Contains(textBuffer2));
         }
 
-        [Test]
+        [Fact]
         public void GetSourceBuffersRecursive_Nested()
         {
             var textBuffer1 = CreateTextBuffer("hello");
@@ -38,15 +37,15 @@ namespace EditorUtils.UnitTest
                 projectionBuffer1.GetExtent(),
                 textBuffer3.GetExtent());
 
-            Assert.AreEqual("hello world", projectionBuffer2.GetLine(0).GetText());
+            Assert.Equal("hello world", projectionBuffer2.GetLine(0).GetText());
             var all = projectionBuffer2.GetSourceBuffersRecursive().ToList();
-            Assert.AreEqual(3, all.Count);
-            Assert.IsTrue(all.Contains(textBuffer1));
-            Assert.IsTrue(all.Contains(textBuffer2));
-            Assert.IsTrue(all.Contains(textBuffer3));
+            Assert.Equal(3, all.Count);
+            Assert.True(all.Contains(textBuffer1));
+            Assert.True(all.Contains(textBuffer2));
+            Assert.True(all.Contains(textBuffer3));
         }
 
-        [Test]
+        [Fact]
         public void TryGetPropertySafe_Found()
         {
             var col = new PropertyCollection();
@@ -54,24 +53,24 @@ namespace EditorUtils.UnitTest
             col.AddProperty(key, "target");
 
             string value;
-            Assert.IsTrue(col.TryGetPropertySafe(key, out value));
-            Assert.AreEqual("target", value);
+            Assert.True(col.TryGetPropertySafe(key, out value));
+            Assert.Equal("target", value);
         }
 
-        [Test]
+        [Fact]
         public void TryGetPropertySafe_NotFound()
         {
             var col = new PropertyCollection();
             var key = new object();
 
             string value;
-            Assert.IsFalse(col.TryGetPropertySafe(key, out value));
+            Assert.False(col.TryGetPropertySafe(key, out value));
         }
 
         /// <summary>
         /// Make sure it doesn't throw if the value is the wrong type
         /// </summary>
-        [Test]
+        [Fact]
         public void TryGetPropertySafe_WrongType()
         {
             var col = new PropertyCollection();
@@ -79,7 +78,7 @@ namespace EditorUtils.UnitTest
             col.AddProperty(key, this);
 
             string value;
-            Assert.IsFalse(col.TryGetPropertySafe(key, out value));
+            Assert.False(col.TryGetPropertySafe(key, out value));
         }
     }
 }

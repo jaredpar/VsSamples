@@ -10,13 +10,12 @@ using EditorUtils.UnitTest.Utils;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Tagging;
-using NUnit.Framework;
+using Xunit;
 using AsyncTaggerType = EditorUtils.Implementation.Tagging.AsyncTagger<string, Microsoft.VisualStudio.Text.Tagging.TextMarkerTag>;
 
 namespace EditorUtils.UnitTest
 {
-    [TestFixture]
-    public sealed class AsyncTaggerTest : EditorTestBase
+    public sealed class AsyncTaggerTest : EditorHost, IDisposable
     {
         #region TestableAsyncTaggerSource
 
@@ -83,13 +82,13 @@ namespace EditorUtils.UnitTest
 
             string IAsyncTaggerSource<string, TextMarkerTag>.GetDataForSpan(SnapshotSpan value)
             {
-                Assert.IsTrue(InMainThread);
+                Assert.True(InMainThread);
                 return DataForSpan;
             }
 
             ReadOnlyCollection<ITagSpan<TextMarkerTag>> IAsyncTaggerSource<string, TextMarkerTag>.GetTagsInBackground(string value, SnapshotSpan span, CancellationToken cancellationToken)
             {
-                Assert.IsFalse(InMainThread);
+                Assert.False(InMainThread);
 
                 if (_backgroundCallback != null)
                 {
@@ -108,7 +107,7 @@ namespace EditorUtils.UnitTest
 
             bool IAsyncTaggerSource<string, TextMarkerTag>.TryGetTagsPrompt(SnapshotSpan span, out IEnumerable<ITagSpan<TextMarkerTag>> tagList)
             {
-                Assert.IsTrue(InMainThread);
+                Assert.True(InMainThread);
                 if (_promptTags != null)
                 {
                     tagList = _promptTags;
@@ -129,14 +128,14 @@ namespace EditorUtils.UnitTest
             {
                 get
                 {
-                    Assert.IsTrue(InMainThread);
+                    Assert.True(InMainThread);
                     return _textBuffer.CurrentSnapshot;
                 }
             }
 
             void IDisposable.Dispose()
             {
-                Assert.IsTrue(InMainThread);
+                Assert.True(InMainThread);
                 IsDisposed = true;
             }
 
@@ -156,8 +155,7 @@ namespace EditorUtils.UnitTest
             get { return new NormalizedSnapshotSpanCollection(_textBuffer.CurrentSnapshot.GetExtent()); }
         }
 
-        [TearDown]
-        public void TearDown()
+        public void Dispose()
         {
             if (_synchronizationContext != null)
             {
@@ -222,7 +220,7 @@ namespace EditorUtils.UnitTest
 
         private List<ITagSpan<TextMarkerTag>> GetTagsFull(SnapshotSpan span, out bool wasAsync)
         {
-            Assert.IsFalse(_asyncTagger.AsyncBackgroundRequestData.HasValue);
+            Assert.False(_asyncTagger.AsyncBackgroundRequestData.HasValue);
             wasAsync = false;
             var tags = _asyncTagger.GetTags(new NormalizedSnapshotSpanCollection(span)).ToList();
             if (_asyncTagger.AsyncBackgroundRequestData.HasValue)
@@ -257,64 +255,64 @@ namespace EditorUtils.UnitTest
         /// <summary>
         /// If the tracking data is empty and we have now tags then it didn't chaneg
         /// </summary>
-        [Test]
+        [Fact]
         public void DidTagsChange_EmptyTrackingData()
         {
             Create("cat", "dog", "bear");
             var span = _textBuffer.GetLine(0).ExtentIncludingLineBreak;
             SetTagCache(CreateTrackingCacheData(span));
-            Assert.IsTrue(_asyncTagger.DidTagsChange(span, CreateTagSpans(_textBuffer.GetSpan(0, 1))));
+            Assert.True(_asyncTagger.DidTagsChange(span, CreateTagSpans(_textBuffer.GetSpan(0, 1))));
         }
 
         /// <summary>
         /// If the tracking data is empty and there are no new tags for the same SnapshotSpan then
         /// nothing changed
         /// </summary>
-        [Test]
+        [Fact]
         public void DidTagsChange_EmptyTrackingData_NoNewTags()
         {
             Create("cat", "dog", "bear");
             var span = _textBuffer.GetLine(0).ExtentIncludingLineBreak;
             SetTagCache(CreateTrackingCacheData(span));
-            Assert.IsFalse(_asyncTagger.DidTagsChange(span, CreateTagSpans()));
+            Assert.False(_asyncTagger.DidTagsChange(span, CreateTagSpans()));
         }
 
         /// <summary>
         /// They didn't change if we can map forward to the same values
         /// </summary>
-        [Test]
+        [Fact]
         public void DidTagsChange_MapsToSame()
         {
             Create("cat", "dog", "bear", "tree");
             var span = _textBuffer.GetLine(0).ExtentIncludingLineBreak;
             SetTagCache(CreateTrackingCacheData(span, _textBuffer.GetSpan(1, 3)));
             _textBuffer.Replace(_textBuffer.GetLine(2).Extent, "fish");
-            Assert.IsFalse(_asyncTagger.DidTagsChange(_textBuffer.GetLine(0).ExtentIncludingLineBreak, CreateTagSpans(_textBuffer.GetSpan(1, 3))));
+            Assert.False(_asyncTagger.DidTagsChange(_textBuffer.GetLine(0).ExtentIncludingLineBreak, CreateTagSpans(_textBuffer.GetSpan(1, 3))));
         }
 
         /// <summary>
         /// They changed if the edit moved them to different places
         /// </summary>
-        [Test]
+        [Fact]
         public void DidTagsChange_MapsToDifferent()
         {
             Create("cat", "dog", "bear", "tree");
             var span = _textBuffer.GetLine(0).ExtentIncludingLineBreak;
             SetTagCache(CreateTrackingCacheData(span, _textBuffer.GetSpan(1, 3)));
             _textBuffer.Insert(0, "big ");
-            Assert.IsTrue(_asyncTagger.DidTagsChange(span, CreateTagSpans(_textBuffer.GetSpan(1, 4))));
+            Assert.True(_asyncTagger.DidTagsChange(span, CreateTagSpans(_textBuffer.GetSpan(1, 4))));
         }
 
         /// <summary>
         /// They changed if they are simply different
         /// </summary>
-        [Test]
+        [Fact]
         public void DidTagsChange_Different()
         {
             Create("cat", "dog", "bear", "tree");
             var span = _textBuffer.GetLine(0).ExtentIncludingLineBreak;
             SetTagCache(CreateTrackingCacheData(span, _textBuffer.GetSpan(1, 3)));
-            Assert.IsTrue(_asyncTagger.DidTagsChange(span, CreateTagSpans(
+            Assert.True(_asyncTagger.DidTagsChange(span, CreateTagSpans(
                 _textBuffer.GetSpan(1, 3), 
                 _textBuffer.GetSpan(5, 7))));
         }
@@ -323,23 +321,23 @@ namespace EditorUtils.UnitTest
         /// First choice should be to go through the prompt code.  This shouldn't create
         /// any cache
         /// </summary>
-        [Test]
+        [Fact]
         public void GetTags_UsePrompt()
         {
             Create("hello world");
             _asyncTaggerSource.SetPromptTags(_textBuffer.GetSpan(0, 1));
             var tags = _asyncTagger.GetTags(EntireBufferSpan).ToList();
-            Assert.AreEqual(1, tags.Count);
-            Assert.AreEqual(_textBuffer.GetSpan(0, 1), tags[0].Span);
-            Assert.IsTrue(_synchronizationContext.IsEmpty);
-            Assert.IsTrue(_asyncTagger.TagCacheData.IsEmpty);
+            Assert.Equal(1, tags.Count);
+            Assert.Equal(_textBuffer.GetSpan(0, 1), tags[0].Span);
+            Assert.True(_synchronizationContext.IsEmpty);
+            Assert.True(_asyncTagger.TagCacheData.IsEmpty);
         }
 
         /// <summary>
         /// If the source can't provide prompt data then the tagger needs to go through
         /// the cache next
         /// </summary>
-        [Test]
+        [Fact]
         public void GetTags_UseCache()
         {
             Create("hello world");
@@ -347,27 +345,27 @@ namespace EditorUtils.UnitTest
                 _textBuffer.GetExtent(),
                 _textBuffer.GetSpan(0, 1));
             var tags = _asyncTagger.GetTags(EntireBufferSpan).ToList();
-            Assert.AreEqual(1, tags.Count);
-            Assert.AreEqual(_textBuffer.GetSpan(0, 1), tags[0].Span);
+            Assert.Equal(1, tags.Count);
+            Assert.Equal(_textBuffer.GetSpan(0, 1), tags[0].Span);
         }
 
         /// <summary>
         /// When there are no prompt sources available for tags we should schedule this
         /// for the background thread
         /// </summary>
-        [Test]
+        [Fact]
         public void GetTags_UseBackground()
         {
             Create("hello world");
             var tags = _asyncTagger.GetTags(EntireBufferSpan).ToList();
-            Assert.AreEqual(0, tags.Count);
-            Assert.IsTrue(_asyncTagger.AsyncBackgroundRequestData.HasValue);
+            Assert.Equal(0, tags.Count);
+            Assert.True(_asyncTagger.AsyncBackgroundRequestData.HasValue);
         }
 
         /// <summary>
         /// Full test going through the background
         /// </summary>
-        [Test]
+        [Fact]
         public void GetTags_UseBackgroundUpdateCache()
         {
             Create("cat", "dog", "bear");
@@ -375,31 +373,31 @@ namespace EditorUtils.UnitTest
             _asyncTaggerSource.SetBackgroundTags(span);
             bool wasAsync;
             var tags = GetTagsFull(_textBuffer.GetExtent(), out wasAsync);
-            Assert.AreEqual(1, tags.Count);
-            Assert.AreEqual(span, tags[0].Span);
-            Assert.IsTrue(wasAsync);
+            Assert.Equal(1, tags.Count);
+            Assert.Equal(span, tags[0].Span);
+            Assert.True(wasAsync);
         }
 
         /// <summary>
         /// Make sure that we can get the tags when there is an explicit delay from
         /// the source
         /// </summary>
-        [Test]
+        [Fact]
         public void GetTags_Delay()
         {
             Create("cat", "dog", "bear");
             var span = _textBuffer.GetSpan(1, 2);
             _asyncTaggerSource.SetBackgroundTags(span);
             var tags = GetTagsFull(_textBuffer.GetExtent());
-            Assert.AreEqual(1, tags.Count);
-            Assert.AreEqual(span, tags[0].Span);
+            Assert.Equal(1, tags.Count);
+            Assert.Equal(span, tags[0].Span);
         }
 
         /// <summary>
         /// The completion of the background operation should cause the TagsChanged
         /// event to be run
         /// </summary>
-        [Test]
+        [Fact]
         public void GetTags_BackgroundShouldRaiseTagsChanged()
         {
             Create("cat", "dog", "bear");
@@ -410,8 +408,8 @@ namespace EditorUtils.UnitTest
             var didRun = false;
             _asyncTaggerInterface.TagsChanged += delegate { didRun = true; };
             var tags = GetTagsFull(_textBuffer.GetExtent());
-            Assert.IsTrue(didRun);
-            Assert.AreEqual(2, tags.Count);
+            Assert.True(didRun);
+            Assert.Equal(2, tags.Count);
         }
 
         /// <summary>
@@ -419,7 +417,7 @@ namespace EditorUtils.UnitTest
         /// one when a call to GetTags occurs.  Better means having an encompasing
         /// span for the new request
         /// </summary>
-        [Test]
+        [Fact]
         public void GetTags_DontReplaceBetterRequest()
         {
             Create("cat", "dog", "bear");
@@ -431,14 +429,14 @@ namespace EditorUtils.UnitTest
                 new Task(() => { }));
 
             var tags = _asyncTagger.GetTags(_textBuffer.GetLine(0).Extent).ToList();
-            Assert.AreEqual(0, tags.Count);
-            Assert.AreSame(cancellationTokenSource, _asyncTagger.AsyncBackgroundRequestData.Value.CancellationTokenSource);
+            Assert.Equal(0, tags.Count);
+            Assert.Same(cancellationTokenSource, _asyncTagger.AsyncBackgroundRequestData.Value.CancellationTokenSource);
         }
 
         /// <summary>
         /// If the existing requset is inferior to the new one then replace it
         /// </summary>
-        [Test]
+        [Fact]
         public void GetTags_ReplaceWorseRequest()
         {
             Create("cat", "dog", "bear");
@@ -450,17 +448,17 @@ namespace EditorUtils.UnitTest
                 new Task(() => { }));
 
             var tags = _asyncTagger.GetTags(_textBuffer.GetExtent()).ToList();
-            Assert.AreEqual(0, tags.Count);
-            Assert.AreNotSame(cancellationTokenSource, _asyncTagger.AsyncBackgroundRequestData.Value.CancellationTokenSource);
-            Assert.IsTrue(cancellationTokenSource.IsCancellationRequested);
-            Assert.AreEqual(_textBuffer.GetExtent(), _asyncTagger.AsyncBackgroundRequestData.Value.Span);
+            Assert.Equal(0, tags.Count);
+            Assert.NotSame(cancellationTokenSource, _asyncTagger.AsyncBackgroundRequestData.Value.CancellationTokenSource);
+            Assert.True(cancellationTokenSource.IsCancellationRequested);
+            Assert.Equal(_textBuffer.GetExtent(), _asyncTagger.AsyncBackgroundRequestData.Value.Span);
         }
 
         /// <summary>
         /// The same Span on different snapshots should cause a different request to be queued
         /// up
         /// </summary>
-        [Test]
+        [Fact]
         public void GetTags_ReplaceWhenSnapshotChanges()
         {
             Create("cat", "dog", "bear");
@@ -473,17 +471,17 @@ namespace EditorUtils.UnitTest
 
             _textBuffer.Replace(new Span(0, 3), "bat");
             var tags = _asyncTagger.GetTags(_textBuffer.GetExtent()).ToList();
-            Assert.AreEqual(0, tags.Count);
-            Assert.AreNotSame(cancellationTokenSource, _asyncTagger.AsyncBackgroundRequestData.Value.CancellationTokenSource);
-            Assert.IsTrue(cancellationTokenSource.IsCancellationRequested);
-            Assert.AreEqual(_textBuffer.GetExtent(), _asyncTagger.AsyncBackgroundRequestData.Value.Span);
+            Assert.Equal(0, tags.Count);
+            Assert.NotSame(cancellationTokenSource, _asyncTagger.AsyncBackgroundRequestData.Value.CancellationTokenSource);
+            Assert.True(cancellationTokenSource.IsCancellationRequested);
+            Assert.Equal(_textBuffer.GetExtent(), _asyncTagger.AsyncBackgroundRequestData.Value.Span);
         }
 
         /// <summary>
         /// If the background request throws (for any reason including cancellation) then it should
         /// be handled and treated just like an empty return
         /// </summary>
-        [Test]
+        [Fact]
         public void GetTags_BackgroundThrows()
         {
             Create("cat", "dog", "bat");
@@ -496,15 +494,15 @@ namespace EditorUtils.UnitTest
             });
 
             var tags = GetTagsFull(_textBuffer.GetExtent());
-            Assert.AreEqual(0, tags.Count);
-            Assert.IsTrue(didRun);
+            Assert.Equal(0, tags.Count);
+            Assert.True(didRun);
         }
 
         /// <summary>
         /// Even if the cache doesn't completely match the information in the cache we should at
         /// least the partial information we have and schedule the rest
         /// </summary>
-        [Test]
+        [Fact]
         public void GetTags_PartialMatchInCache()
         {
             Create("cat", "dog", "bat");
@@ -512,15 +510,15 @@ namespace EditorUtils.UnitTest
                 _textBuffer.GetLine(0).ExtentIncludingLineBreak,
                 _textBuffer.GetSpan(0, 1));
             var tags = _asyncTagger.GetTags(_textBuffer.GetLineRange(0, 1).ExtentIncludingLineBreak).ToList();
-            Assert.AreEqual(1, tags.Count);
-            Assert.IsTrue(_asyncTagger.AsyncBackgroundRequestData.HasValue);
+            Assert.Equal(1, tags.Count);
+            Assert.True(_asyncTagger.AsyncBackgroundRequestData.HasValue);
         }
 
         /// <summary>
         /// If there is a forward edit we should still return cache data as best as possible promptly
         /// and schedule a background task for the correct data
         /// </summary>
-        [Test]
+        [Fact]
         public void GetTags_ForwardEdit()
         {
             Create("cat", "dog", "bat");
@@ -529,28 +527,28 @@ namespace EditorUtils.UnitTest
                 _textBuffer.GetSpan(0, 1));
             _textBuffer.Replace(new Span(0, 3), "cot");
             var tags = _asyncTagger.GetTags(_textBuffer.GetLineRange(0, 1).ExtentIncludingLineBreak).ToList();
-            Assert.AreEqual(1, tags.Count);
-            Assert.IsTrue(_asyncTagger.AsyncBackgroundRequestData.HasValue);
+            Assert.Equal(1, tags.Count);
+            Assert.True(_asyncTagger.AsyncBackgroundRequestData.HasValue);
         }
 
         /// <summary>
         /// Make sure that a prompt call updates the request span
         /// </summary>
-        [Test]
+        [Fact]
         public void GetTags_PromptUpdateRequestSpan()
         {
             Create("hello world", "cat chased the dog");
             var span = _textBuffer.GetSpan(0, 6);
             _asyncTaggerSource.SetPromptTags(_textBuffer.GetSpan(0, 1));
             _asyncTagger.GetTags(span);
-            Assert.AreEqual(span, _asyncTagger.CachedRequestSpan.Value);
+            Assert.Equal(span, _asyncTagger.CachedRequestSpan.Value);
         }
 
         /// <summary>
         /// If we have tags which are mixed between background and tracking we need to pull 
         /// from both sources
         /// </summary>
-        [Test]
+        [Fact]
         public void GetTags_BackgroundAndTracking()
         {
             Create("cat", "dog", "bear", "pig");
@@ -558,7 +556,7 @@ namespace EditorUtils.UnitTest
             var trackingData = CreateTrackingCacheData(_textBuffer.GetLine(1).Extent, _textBuffer.GetLineSpan(1, 1));
             _asyncTagger.TagCacheData = new AsyncTaggerType.TagCache(backgroundData, trackingData);
             var tags = _asyncTagger.GetTags(_textBuffer.GetLineRange(0, 2).ExtentIncludingLineBreak);
-            Assert.AreEqual(2, tags.Count());
+            Assert.Equal(2, tags.Count());
         }
 
         /// <summary>
@@ -566,7 +564,7 @@ namespace EditorUtils.UnitTest
         /// incorrect ITextSnapshot.  If we use a Span against the wrong ITextSnapshot it should 
         /// cause an exception
         /// </summary>
-        [Test]
+        [Fact]
         public void GetTags_ToEmptyBuffer()
         {
             Create("cat", "dog", "bear", "pig");
@@ -576,14 +574,14 @@ namespace EditorUtils.UnitTest
                 _textBuffer.GetSpan(5, 3));
             _textBuffer.Delete(new Span(0, _textBuffer.CurrentSnapshot.Length));
             var list = GetTagsFull(_textBuffer.GetExtent());
-            Assert.IsNotNull(list);
+            Assert.NotNull(list);
         }
 
         /// <summary>
         /// If the IAsyncTaggerSource raises a TagsChanged event then the tagger must clear 
         /// out it's cache.  Anything it's stored up until this point is now invalid
         /// </summary>
-        [Test]
+        [Fact]
         public void OnChanged_ClearCache()
         {
             Create("hello world");
@@ -591,14 +589,14 @@ namespace EditorUtils.UnitTest
                 _textBuffer.GetExtent(),
                 _textBuffer.GetSpan(0, 1));
             _asyncTaggerSource.RaiseChanged(null);
-            Assert.IsTrue(_asyncTagger.TagCacheData.IsEmpty);
+            Assert.True(_asyncTagger.TagCacheData.IsEmpty);
         }
 
         /// <summary>
         /// If the IAsyncTaggerSource raises a TagsChanged event then any existing tagger
         /// requests are invalid
         /// </summary>
-        [Test]
+        [Fact]
         public void OnChanged_ClearBackgroundRequest()
         {
             Create("hello world");
@@ -608,14 +606,14 @@ namespace EditorUtils.UnitTest
                 cancellationTokenSource,
                 new Task(() => { }));
             _asyncTaggerSource.RaiseChanged(null);
-            Assert.IsFalse(_asyncTagger.AsyncBackgroundRequestData.HasValue);
-            Assert.IsTrue(cancellationTokenSource.IsCancellationRequested);
+            Assert.False(_asyncTagger.AsyncBackgroundRequestData.HasValue);
+            Assert.True(cancellationTokenSource.IsCancellationRequested);
         }
 
         /// <summary>
         /// When the IAsyncTaggerSource raises it's event the tagger must as well
         /// </summary>
-        [Test]
+        [Fact]
         public void OnChanged_RaiseEvent()
         {
             Create("hello world");
@@ -627,14 +625,14 @@ namespace EditorUtils.UnitTest
             };
 
             _asyncTaggerSource.RaiseChanged(null);
-            Assert.IsTrue(didRun);
+            Assert.True(didRun);
         }
 
         /// <summary>
         /// If we've not recieved a GetTags request then don't raise a TagsChanged event when
         /// we get a Changed event.  
         /// </summary>
-        [Test]
+        [Fact]
         public void OnChanged_DontRaiseEventIfNoRequests()
         {
             Create("hello world");
@@ -645,14 +643,14 @@ namespace EditorUtils.UnitTest
             };
 
             _asyncTaggerSource.RaiseChanged(null);
-            Assert.IsFalse(didRun);
+            Assert.False(didRun);
         }
 
         /// <summary>
         /// When the initial background request completes make sure that a TagsChanged is raised for the
         /// expected SnapshotSpan
         /// </summary>
-        [Test]
+        [Fact]
         public void TagsChanged_BackgroundComplete()
         {
             Create("cat", "dog", "bear");
@@ -661,8 +659,8 @@ namespace EditorUtils.UnitTest
             _asyncTaggerInterface.TagsChanged += (sender, e) => { tagsChanged = e.Span; };
             _asyncTaggerSource.SetBackgroundTags(_textBuffer.GetSpan(0, 1));
             GetTagsFull(requestSpan);
-            Assert.IsTrue(tagsChanged.HasValue);
-            Assert.AreEqual(requestSpan, tagsChanged);
+            Assert.True(tagsChanged.HasValue);
+            Assert.Equal(requestSpan, tagsChanged);
         }
 
         /// <summary>
@@ -672,7 +670,7 @@ namespace EditorUtils.UnitTest
         /// TagsChanged again for the same SnapshotSpan.  Doing so causes needless work and results in items
         /// like screen flickering
         /// </summary>
-        [Test]
+        [Fact]
         public void TagsChanged_TrackingPredictedBackgroundResult()
         {
             Create("cat", "dog", "bear", "tree");
@@ -691,13 +689,13 @@ namespace EditorUtils.UnitTest
             _asyncTaggerSource.SetBackgroundTags(_textBuffer.GetSpan(0, 1));
             GetTagsFull(_textBuffer.GetLineRange(0, 1).ExtentIncludingLineBreak);
 
-            Assert.IsFalse(tagsChanged.HasValue);
+            Assert.False(tagsChanged.HasValue);
         }
 
         /// <summary>
         /// An edit followed by different tags should raise the TagsChanged event
         /// </summary>
-        [Test]
+        [Fact]
         public void TagsChanged_TrackingDidNotPredictBackgroundResult()
         {
             Create("cat", "dog", "bear", "tree");
@@ -717,8 +715,8 @@ namespace EditorUtils.UnitTest
             var requestSpan = _textBuffer.GetLineRange(0, 1).ExtentIncludingLineBreak;
             GetTagsFull(requestSpan);
 
-            Assert.IsTrue(tagsChanged.HasValue);
-            Assert.AreEqual(requestSpan, tagsChanged.Value);
+            Assert.True(tagsChanged.HasValue);
+            Assert.Equal(requestSpan, tagsChanged.Value);
         }
     }
 }
