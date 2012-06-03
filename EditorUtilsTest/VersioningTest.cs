@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using System.Reflection;
 using System.ComponentModel.Composition;
 
 namespace EditorUtils.UnitTest
 {
-    [TestFixture]
     public sealed class VersioningTest
     {
         /// <summary>
@@ -41,7 +40,7 @@ namespace EditorUtils.UnitTest
         /// assembly qualified type names for matching we have to use the ContractName to create 
         /// versioning
         /// </summary>
-        [Test]
+        [Fact]
         public void ExportMustHaveContractName()
         {
             var assembly = typeof(ITaggerFactory).Assembly;
@@ -53,7 +52,8 @@ namespace EditorUtils.UnitTest
                     .Where(x => x.ContractType.Assembly == assembly);
                 foreach (var attr in all)
                 {
-                    Assert.AreEqual(Constants.ContractName, attr.ContractName, String.Format("{0} needs a Export::ContractName for {1}", cur, attr.ContractType));
+                    // Make sure that the given export has the conrtact name
+                    Assert.Equal(Constants.ContractName, attr.ContractName);
                 }
             }
         }

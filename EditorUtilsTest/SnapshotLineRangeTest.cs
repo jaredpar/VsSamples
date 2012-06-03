@@ -1,10 +1,9 @@
 ﻿using Microsoft.VisualStudio.Text;
-using NUnit.Framework;
+using Xunit;
 
 namespace EditorUtils.UnitTest
 {
-    [TestFixture]
-    public class SnapshotLineRangeTest : EditorTestBase
+    public class SnapshotLineRangeTest : EditorHost
     {
         private ITextBuffer _buffer;
 
@@ -13,12 +12,12 @@ namespace EditorUtils.UnitTest
             _buffer = CreateTextBuffer(lines);
         }
 
-        [Test]
+        [Fact]
         public void Lines1()
         {
             Create("a", "b");
             var lineRange = SnapshotLineRange.CreateForLineAndMaxCount(_buffer.GetLine(0), 400);
-            Assert.AreEqual(2, lineRange.Count);
+            Assert.Equal(2, lineRange.Count);
         }
     }
 }
