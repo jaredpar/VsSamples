@@ -173,6 +173,11 @@ namespace EditorUtils
             get { return _smartIndentationService; }
         }
 
+        public ITextBufferFactoryService TextBufferFactoryService
+        {
+            get { return _textBufferFactoryService; }
+        }
+
         public ITextEditorFactoryService TextEditorFactoryService
         {
             get { return _textEditorFactoryService; }
