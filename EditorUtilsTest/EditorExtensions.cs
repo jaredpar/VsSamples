@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Windows.Threading;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Tagging;
@@ -123,5 +125,23 @@ namespace EditorUtils.UnitTest
 
         #endregion
 
+        #region Dispatcher
+
+        /// <summary>
+        /// Run all outstanding events queued on the provided Dispatcher
+        /// </summary>
+        /// <param name="dispatcher"></param>
+        public static void DoEvents(this Dispatcher dispatcher)
+        {
+            var frame = new DispatcherFrame();
+            Action<DispatcherFrame> action = _ => { frame.Continue = false; };
+            dispatcher.BeginInvoke(
+                DispatcherPriority.SystemIdle,
+                action,
+                frame);
+            Dispatcher.PushFrame(frame);
+        }
+
+        #endregion
     }
 }

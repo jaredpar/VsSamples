@@ -1,11 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
-  <!-- Properties to enable easy NuGet publishing.  Want release by default --> 
+  <!-- Properties to enable easy NuGet publishing.  Want release by default -->
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
   </PropertyGroup>
-
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -67,6 +65,7 @@
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncTaggerSource.cs" />
@@ -89,7 +88,9 @@
     <Compile Include="Implementation\Tagging\TaggerUtil.cs" />
     <Compile Include="Implementation\Utilities\EqualityUtility.cs" />
     <Compile Include="Implementation\Utilities\LineRangeVisited.cs" />
+    <Compile Include="Implementation\Utilities\ProtectedOperations.cs" />
     <Compile Include="Implementation\Utilities\SingleItemQueue.cs" />
+    <Compile Include="IProtectedOperations.cs" />
     <Compile Include="ITaggerFactory.cs" />
     <Compile Include="LineRange.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

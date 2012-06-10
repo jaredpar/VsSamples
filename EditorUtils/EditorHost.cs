@@ -162,6 +162,7 @@ namespace EditorUtils
         private IContentTypeRegistryService _contentTypeRegistryService;
         private IAdhocOutlinerFactory _adhocOutlinerFactory;
         private ITaggerFactory _taggerFactory;
+        private IProtectedOperations _protectedOperations;
 
         public CompositionContainer CompositionContainer
         {
@@ -226,6 +227,11 @@ namespace EditorUtils
         public ITaggerFactory TaggerFactory
         {
             get { return _taggerFactory; }
+        }
+
+        public IProtectedOperations ProtectedOperations
+        {
+            get { return _protectedOperations; }
         }
 
         public EditorHost()
@@ -331,6 +337,7 @@ namespace EditorUtils
             _contentTypeRegistryService = _compositionContainer.GetExportedValue<IContentTypeRegistryService>();
             _adhocOutlinerFactory = _compositionContainer.GetExportedValue<IAdhocOutlinerFactory>(Constants.ContractName);
             _taggerFactory = _compositionContainer.GetExportedValue<ITaggerFactory>(Constants.ContractName);
+            _protectedOperations = _compositionContainer.GetExportedValue<IProtectedOperations>(Constants.ContractName);
         }
 
         /// <summary>
