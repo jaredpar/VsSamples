@@ -22,7 +22,7 @@ namespace EditorUtils
     /// </summary>
     public class EditorHost
     {
-        #region Undo MEF Registration
+        #region Undo / Redo MEF Registration
 
         /// <summary>
         /// In order to host the editor we need to provide an ITextUndoHistory export.  However 
@@ -163,6 +163,7 @@ namespace EditorUtils
         private IAdhocOutlinerFactory _adhocOutlinerFactory;
         private ITaggerFactory _taggerFactory;
         private IProtectedOperations _protectedOperations;
+        private IBasicUndoHistoryRegistry _basicUndoHistoryRegistry;
 
         public CompositionContainer CompositionContainer
         {
@@ -232,6 +233,11 @@ namespace EditorUtils
         public IProtectedOperations ProtectedOperations
         {
             get { return _protectedOperations; }
+        }
+
+        public IBasicUndoHistoryRegistry BasicUndoHistoryRegistry
+        {
+            get { return _basicUndoHistoryRegistry; }
         }
 
         public EditorHost()
@@ -338,6 +344,7 @@ namespace EditorUtils
             _adhocOutlinerFactory = _compositionContainer.GetExportedValue<IAdhocOutlinerFactory>(Constants.ContractName);
             _taggerFactory = _compositionContainer.GetExportedValue<ITaggerFactory>(Constants.ContractName);
             _protectedOperations = _compositionContainer.GetExportedValue<IProtectedOperations>(Constants.ContractName);
+            _basicUndoHistoryRegistry = _compositionContainer.GetExportedValue<IBasicUndoHistoryRegistry>(Constants.ContractName);
         }
 
         /// <summary>

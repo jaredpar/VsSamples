@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.Utilities;
+using Microsoft.VisualStudio.Text.Editor;
 
 namespace EditorUtils
 {
@@ -10,8 +11,9 @@ namespace EditorUtils
     /// Provides a very simple ITextUndoHistory implementation.  Sufficient for us to test
     /// simple undo scenarios inside the unit tests
     /// </summary>
-    internal sealed class BasicUndoHistory : ITextUndoHistory
+    internal sealed class BasicUndoHistory : IBasicUndoHistory
     {
+        private readonly object _context;
         private readonly Stack<BasicUndoTransaction> _openTransactionStack = new Stack<BasicUndoTransaction>();
         private readonly Stack<ITextUndoTransaction> _undoStack = new Stack<ITextUndoTransaction>();
         private readonly Stack<ITextUndoTransaction> _redoStack = new Stack<ITextUndoTransaction>();
@@ -23,6 +25,26 @@ namespace EditorUtils
         internal ITextUndoTransaction CurrentTransaction
         {
             get { return _openTransactionStack.Count > 0 ? _openTransactionStack.Peek() : null; }
+        }
+
+        internal Stack<ITextUndoTransaction> UndoStack
+        {
+            get { return _undoStack; }
+        }
+
+        internal Stack<ITextUndoTransaction> RedoStack
+        {
+            get { return _redoStack; }
+        }
+
+        internal object Context
+        {
+            get { return _context; }
+        }
+
+        internal BasicUndoHistory(object context)
+        {
+            _context = context;
         }
 
         internal ITextUndoTransaction CreateTransaction(string description)
@@ -105,6 +127,29 @@ namespace EditorUtils
             }
         }
 
+        internal void Clear()
+        {
+            if (_state != TextUndoHistoryState.Idle || CurrentTransaction != null)
+            {
+                throw new InvalidOperationException("Can't clear with an open transaction or in undo / redo");
+            }
+
+            _undoStack.Clear();
+            _redoStack.Clear();
+
+            // The IEditorOperations AddAfterTextBufferChangePrimitive and AddBeforeTextBufferChangePrimitive
+            // implementations store an ITextView in the Property of the associated ITextUndoHistory.  It's
+            // necessary to keep this value present so long as the primitives are in the undo / redo stack
+            // as their implementation depends on it.  Once the stack is cleared we can safely remove 
+            // the value.
+            //
+            // This is in fact necessary for sane testing.  Without this removal it's impossible to have 
+            // an ITextView disconnect and be collected from it's underlying ITextBuffer.  The ITextUndoHistory
+            // is associated with an ITextBuffer and through it's undo stack will keep the ITextView alive
+            // indefinitely
+            _properties.RemoveProperty(typeof(ITextView));
+        }
+
         private void RaiseUndoRedoHappened()
         {
             var list = _undoRedoHappened;
@@ -114,8 +159,6 @@ namespace EditorUtils
                 list(this, new TextUndoRedoEventArgs(_state, null));
             }
         }
-
-
 
         #region ITextUndoHistory
 
@@ -226,6 +269,15 @@ namespace EditorUtils
         PropertyCollection IPropertyOwner.Properties
         {
             get { return _properties; }
+        }
+
+        #endregion
+
+        #region IBasicUndoHistory
+
+        void IBasicUndoHistory.Clear()
+        {
+            Clear();
         }
 
         #endregion

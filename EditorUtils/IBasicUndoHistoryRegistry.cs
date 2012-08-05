@@ -12,7 +12,7 @@ namespace EditorUtils
     /// this would conflict with Visual Studios export and cause a MEF composition 
     /// error.  It's instead exposed via this interface 
     ///
-    /// In general this type won't be used
+    /// In general this type won't be used except in testing
     /// </summary>
     public interface IBasicUndoHistoryRegistry
     {
@@ -20,5 +20,18 @@ namespace EditorUtils
         /// Get the basic implementation of the ITextUndoHistoryRegistry
         /// </summary>
         ITextUndoHistoryRegistry TextUndoHistoryRegistry { get; }
+
+        /// <summary>
+        /// Try and get the IBasicUndoHistory for the given context
+        /// </summary>
+        bool TryGetBasicUndoHistory(object context, out IBasicUndoHistory basicUndoHistory);
+    }
+
+    public interface IBasicUndoHistory : ITextUndoHistory
+    {
+        /// <summary>
+        /// Clear out all of the state including the undo and redo stacks
+        /// </summary>
+        void Clear();
     }
 }

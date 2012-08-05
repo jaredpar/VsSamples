@@ -13,28 +13,36 @@ namespace EditorUtils
     [Export(Constants.ContractName, typeof(IBasicUndoHistoryRegistry))]
     internal sealed class BasicTextUndoHistoryRegistry : ITextUndoHistoryRegistry, IBasicUndoHistoryRegistry
     {
-        private readonly ConditionalWeakTable<object, ITextUndoHistory> _map = new ConditionalWeakTable<object, ITextUndoHistory>();
+        private readonly ConditionalWeakTable<object, IBasicUndoHistory> _map = new ConditionalWeakTable<object, IBasicUndoHistory>();
+
+        private bool TryGetHistory(object context, out IBasicUndoHistory basicUndoHistory)
+        {
+            return _map.TryGetValue(context, out basicUndoHistory);
+        }
 
         #region ITextUndoHistoryRegistry
 
+        /// <summary>
+        /// Easy to implement but the Visual Studio implementation throws a NotSupportedException
+        /// </summary>
         void ITextUndoHistoryRegistry.AttachHistory(object context, ITextUndoHistory history)
         {
-            _map.Add(context, history);
+            throw new NotSupportedException();
         }
 
         ITextUndoHistory ITextUndoHistoryRegistry.GetHistory(object context)
         {
-            ITextUndoHistory history;
+            IBasicUndoHistory history;
             _map.TryGetValue(context, out history);
             return history;
         }
 
         ITextUndoHistory ITextUndoHistoryRegistry.RegisterHistory(object context)
         {
-            ITextUndoHistory history;
+            IBasicUndoHistory history;
             if (!_map.TryGetValue(context, out history))
             {
-                history = new BasicUndoHistory();
+                history = new BasicUndoHistory(context);
                 _map.Add(context, history);
             }
             return history;
@@ -42,12 +50,25 @@ namespace EditorUtils
 
         void ITextUndoHistoryRegistry.RemoveHistory(ITextUndoHistory history)
         {
-            throw new NotImplementedException();
+            var basicUndoHistory = history as BasicUndoHistory;
+            if (basicUndoHistory != null)
+            {
+                _map.Remove(basicUndoHistory.Context);
+                basicUndoHistory.Clear();
+            }
         }
 
         bool ITextUndoHistoryRegistry.TryGetHistory(object context, out ITextUndoHistory history)
         {
-            return _map.TryGetValue(context, out history);
+            IBasicUndoHistory basicUndoHistory;
+            if (TryGetHistory(context, out basicUndoHistory))
+            {
+                history = basicUndoHistory;
+                return true;
+            }
+
+            history = null;
+            return false;
         }
 
         #endregion
@@ -57,6 +78,11 @@ namespace EditorUtils
         ITextUndoHistoryRegistry IBasicUndoHistoryRegistry.TextUndoHistoryRegistry
         {
             get { return this; }
+        }
+
+        bool IBasicUndoHistoryRegistry.TryGetBasicUndoHistory(object context, out IBasicUndoHistory basicUndoHistory)
+        {
+            return TryGetHistory(context, out basicUndoHistory);
         }
 
         #endregion

@@ -113,11 +113,13 @@
     <Compile Include="AdhocOutlinerFactoryTest.cs" />
     <Compile Include="AsyncTaggerTest.cs" />
     <Compile Include="BasicTaggerTest.cs" />
+    <Compile Include="BasicUndoHistoryTest.cs" />
     <Compile Include="CountedTaggerTest.cs" />
     <Compile Include="EditorExtensions.cs" />
     <Compile Include="ExtensionsTest.cs" />
     <Compile Include="LineRangeTest.cs" />
     <Compile Include="LineRangeVisitedTest.cs" />
+    <Compile Include="MemoryLeakTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ProtectedOperationsTest.cs" />
     <Compile Include="SnapshotLineRangeTest.cs" />
