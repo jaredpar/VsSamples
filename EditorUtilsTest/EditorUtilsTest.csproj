@@ -117,6 +117,7 @@
     <Compile Include="CountedTaggerTest.cs" />
     <Compile Include="EditorExtensions.cs" />
     <Compile Include="ExtensionsTest.cs" />
+    <Compile Include="ImportAttributeTest.cs" />
     <Compile Include="LineRangeTest.cs" />
     <Compile Include="LineRangeVisitedTest.cs" />
     <Compile Include="MemoryLeakTest.cs" />
