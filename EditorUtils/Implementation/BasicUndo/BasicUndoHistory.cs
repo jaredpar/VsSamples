@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.Utilities;
 using Microsoft.VisualStudio.Text.Editor;
 
-namespace EditorUtils
+namespace EditorUtils.Implementation.BasicUndo
 {
     /// <summary>
     /// Provides a very simple ITextUndoHistory implementation.  Sufficient for us to test

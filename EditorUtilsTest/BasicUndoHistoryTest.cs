@@ -1,6 +1,7 @@
 ﻿using Xunit;
 using Microsoft.VisualStudio.Text.Editor;
 using System;
+using EditorUtils.Implementation.BasicUndo;
 
 namespace EditorUtils.UnitTest
 {

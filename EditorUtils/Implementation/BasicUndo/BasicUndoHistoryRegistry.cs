@@ -3,7 +3,7 @@ using System.ComponentModel.Composition;
 using System.Runtime.CompilerServices;
 using Microsoft.VisualStudio.Text.Operations;
 
-namespace EditorUtils
+namespace EditorUtils.Implementation.BasicUndo
 {
     /// <summary>
     /// This class intentionally doesn't Export ITextUndoHistoryRegistry.  Doing that would conflict
