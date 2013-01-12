@@ -9,6 +9,6 @@ namespace ProjectionBufferDemo
 {
     internal interface IEditorFactory
     {
-        IVsEditorFactory CreateVsEditorFactory();
+        IVsEditorFactory VsEditorFactory { get; } 
     }
 }

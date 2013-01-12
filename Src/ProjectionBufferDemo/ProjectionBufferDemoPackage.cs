@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.ComponentModelHost;
 
 namespace ProjectionBufferDemo
 {
+
     /// <summary>
     /// This is the class that implements the package exposed by this assembly.
     ///
@@ -33,6 +34,11 @@ namespace ProjectionBufferDemo
     // This attribute registers a tool window exposed by this package.
     [ProvideToolWindow(typeof(MyToolWindow))]
     [Guid(GuidList.guidProjectionBufferDemoPkgString)]
+
+
+    // TODO: Remove.  Layering violation
+    [ProvideEditorFactoryAttribute(typeof(ProjectionBufferDemo.Implementation.EditorFactory.VsEditorFactory), 113)] 
+    [ProvideEditorExtensionAttribute(typeof(ProjectionBufferDemo.Implementation.EditorFactory.VsEditorFactory), ".myext", 32, NameResourceID = 113)]
     public sealed class ProjectionBufferDemoPackage : Package
     {
         /// <summary>
@@ -66,7 +72,6 @@ namespace ProjectionBufferDemo
             Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
         }
 
-
         /////////////////////////////////////////////////////////////////////////////
         // Overridden Package Implementation
         #region Package Members
@@ -96,6 +101,12 @@ namespace ProjectionBufferDemo
 
             var componentModel = (IComponentModel)GetService(typeof(SComponentModel));
             var editorFactory = componentModel.DefaultExportProvider.GetExportedValue<IEditorFactory>();
+
+
+            // TODO: Remove.  Layering violation
+            ((ProjectionBufferDemo.Implementation.EditorFactory.VsEditorFactory)editorFactory.VsEditorFactory).Package = this;
+
+            RegisterEditorFactory(editorFactory.VsEditorFactory);
         }
         #endregion
 

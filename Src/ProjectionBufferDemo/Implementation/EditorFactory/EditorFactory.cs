@@ -20,9 +20,9 @@ namespace ProjectionBufferDemo.Implementation.EditorFactory
 
         #region IEditorFactory
 
-        IVsEditorFactory IEditorFactory.CreateVsEditorFactory()
+        IVsEditorFactory IEditorFactory.VsEditorFactory
         {
-            return _vsEditorFactory;
+            get { return _vsEditorFactory; }
         }
 
         #endregion
