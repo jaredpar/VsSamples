@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JaredPar.ProjectionBufferDemo
+namespace ProjectionBufferDemo
 {
     internal interface IEditorFactory
     {

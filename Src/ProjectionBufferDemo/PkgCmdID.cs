@@ -2,7 +2,7 @@
 // MUST match PkgCmdID.h
 using System;
 
-namespace JaredPar.ProjectionBufferDemo
+namespace ProjectionBufferDemo
 {
     static class PkgCmdIDList
     {

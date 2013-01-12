@@ -12,7 +12,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace JaredPar.ProjectionBufferDemo
+namespace ProjectionBufferDemo
 {
     /// <summary>
     /// Interaction logic for MyControl.xaml

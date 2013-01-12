@@ -2,7 +2,7 @@
 // MUST match guids.h
 using System;
 
-namespace JaredPar.ProjectionBufferDemo
+namespace ProjectionBufferDemo
 {
     static class GuidList
     {

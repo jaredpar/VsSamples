@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JaredPar.ProjectionBufferDemo.Implementation.EditorFactory
+namespace ProjectionBufferDemo.Implementation.EditorFactory
 {
     [Export(typeof(IEditorFactory))]
     internal sealed class EditorFactory : IEditorFactory

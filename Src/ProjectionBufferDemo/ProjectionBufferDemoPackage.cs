@@ -10,7 +10,7 @@ using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.ComponentModelHost;
 
-namespace JaredPar.ProjectionBufferDemo
+namespace ProjectionBufferDemo
 {
     /// <summary>
     /// This is the class that implements the package exposed by this assembly.
