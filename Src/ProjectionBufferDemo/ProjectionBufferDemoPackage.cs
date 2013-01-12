@@ -8,6 +8,7 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.ComponentModelHost;
 
 namespace JaredPar.ProjectionBufferDemo
 {
@@ -93,8 +94,8 @@ namespace JaredPar.ProjectionBufferDemo
                 mcs.AddCommand( menuToolWin );
             }
 
-            // Get Mef Code
-            // Microsoft.VisualStudio.ComponentModelHost.IComponentModel cm = sp.GetService(typeof(Microsoft.VisualStudio.ComponentModelHost.SComponentModel))
+            var componentModel = (IComponentModel)GetService(typeof(SComponentModel));
+            var editorFactory = componentModel.DefaultExportProvider.GetExportedValue<IEditorFactory>();
         }
         #endregion
 
