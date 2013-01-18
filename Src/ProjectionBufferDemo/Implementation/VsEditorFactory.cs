@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using IServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 
-namespace ProjectionBufferDemo.Implementation.EditorFactory
+namespace ProjectionBufferDemo.Implementation
 {
     [Guid("a28cb5f4-e84d-4be3-900c-895827b8332c")]
     internal sealed class VsEditorFactory : IVsEditorFactory

@@ -37,8 +37,8 @@ namespace ProjectionBufferDemo
 
 
     // TODO: Remove.  Layering violation
-    [ProvideEditorFactoryAttribute(typeof(ProjectionBufferDemo.Implementation.EditorFactory.VsEditorFactory), 113)] 
-    [ProvideEditorExtensionAttribute(typeof(ProjectionBufferDemo.Implementation.EditorFactory.VsEditorFactory), ".myext", 32, NameResourceID = 113)]
+    [ProvideEditorFactoryAttribute(typeof(ProjectionBufferDemo.Implementation.VsEditorFactory), 113)] 
+    [ProvideEditorExtensionAttribute(typeof(ProjectionBufferDemo.Implementation.VsEditorFactory), ".myext", 32, NameResourceID = 113)]
     public sealed class ProjectionBufferDemoPackage : Package
     {
         /// <summary>
@@ -104,7 +104,7 @@ namespace ProjectionBufferDemo
 
 
             // TODO: Remove.  Layering violation
-            ((ProjectionBufferDemo.Implementation.EditorFactory.VsEditorFactory)editorFactory.VsEditorFactory).Package = this;
+            ((ProjectionBufferDemo.Implementation.VsEditorFactory)editorFactory.VsEditorFactory).Package = this;
 
             RegisterEditorFactory(editorFactory.VsEditorFactory);
         }

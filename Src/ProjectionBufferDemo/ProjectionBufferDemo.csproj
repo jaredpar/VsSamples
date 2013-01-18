@@ -127,8 +127,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IEditorFactory.cs" />
-    <Compile Include="Implementation\EditorFactory\EditorFactory.cs" />
-    <Compile Include="Implementation\EditorFactory\VsEditorFactory.cs" />
+    <Compile Include="Implementation\EditorFactory.cs" />
+    <Compile Include="Implementation\VsEditorFactory.cs" />
     <Compile Include="MyControl.xaml.cs">
       <DependentUpon>MyControl.xaml</DependentUpon>
     </Compile>
