@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Text;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,8 @@ namespace ProjectionBufferDemo
 {
     internal interface IEditorFactory
     {
-        IVsEditorFactory VsEditorFactory { get; } 
+        IVsEditorFactory VsEditorFactory { get; }
+
+        bool OpenInNewWindow(string name, ITextBuffer textBuffer);
     }
 }
