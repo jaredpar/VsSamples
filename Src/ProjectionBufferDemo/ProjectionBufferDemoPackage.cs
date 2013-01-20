@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.Text;
 
 namespace ProjectionBufferDemo
 {
@@ -41,6 +42,8 @@ namespace ProjectionBufferDemo
     [ProvideEditorExtensionAttribute(typeof(ProjectionBufferDemo.Implementation.VsEditorFactory), ".myext", 32, NameResourceID = 113)]
     public sealed class ProjectionBufferDemoPackage : Package
     {
+        private IEditorFactory _editorFactory;
+
         /// <summary>
         /// Default constructor of the package.
         /// Inside this method you can place any initialization code that does not require 
@@ -100,13 +103,13 @@ namespace ProjectionBufferDemo
             }
 
             var componentModel = (IComponentModel)GetService(typeof(SComponentModel));
-            var editorFactory = componentModel.DefaultExportProvider.GetExportedValue<IEditorFactory>();
+            _editorFactory = componentModel.DefaultExportProvider.GetExportedValue<IEditorFactory>();
 
 
             // TODO: Remove.  Layering violation
-            ((ProjectionBufferDemo.Implementation.VsEditorFactory)editorFactory.VsEditorFactory).Package = this;
+            ((ProjectionBufferDemo.Implementation.VsEditorFactory)_editorFactory.VsEditorFactory).Package = this;
 
-            RegisterEditorFactory(editorFactory.VsEditorFactory);
+            RegisterEditorFactory(_editorFactory.VsEditorFactory);
         }
         #endregion
 
@@ -118,6 +121,11 @@ namespace ProjectionBufferDemo
         private void MenuItemCallback(object sender, EventArgs e)
         {
             // Show a Message Box to prove we were here
+            var textBuffer = _editorFactory.TextBufferFactoryService.CreateTextBuffer();
+            textBuffer.Replace(new Span(0, 0), "This is my victory");
+            _editorFactory.OpenInNewWindow("Test.demo", textBuffer);
+
+            /*
             IVsUIShell uiShell = (IVsUIShell)GetService(typeof(SVsUIShell));
             Guid clsid = Guid.Empty;
             int result;
@@ -133,6 +141,7 @@ namespace ProjectionBufferDemo
                        OLEMSGICON.OLEMSGICON_INFO,
                        0,        // false
                        out result));
+            */
         }
 
     }
