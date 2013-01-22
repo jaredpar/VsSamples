@@ -123,7 +123,8 @@ namespace ProjectionBufferDemo
             // Show a Message Box to prove we were here
             var textBuffer = _editorFactory.TextBufferFactoryService.CreateTextBuffer();
             textBuffer.Replace(new Span(0, 0), "This is my victory");
-            _editorFactory.OpenInNewWindow("Test.demo", textBuffer);
+            //_editorFactory.OpenInNewWindow(textBuffer, "Test.txt", languageServiceId: csharpLanguageServiceId);
+            _editorFactory.OpenInNewWindow(textBuffer, "Test.txt");
 
             /*
             IVsUIShell uiShell = (IVsUIShell)GetService(typeof(SVsUIShell));

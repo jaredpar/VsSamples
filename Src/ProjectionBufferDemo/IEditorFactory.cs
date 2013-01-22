@@ -12,8 +12,13 @@ namespace ProjectionBufferDemo
     {
         IVsEditorFactory VsEditorFactory { get; }
 
-        ITextBufferFactoryService TextBufferFactoryService { get; } 
+        ITextBufferFactoryService TextBufferFactoryService { get; }
 
-        bool OpenInNewWindow(string name, ITextBuffer textBuffer);
+        bool OpenInNewWindow(
+            ITextBuffer textBuffer,
+            string name,
+            Guid? editorTypeId = null,
+            Guid? logicalViewId = null,
+            Guid? languageServiceId = null);
     }
 }

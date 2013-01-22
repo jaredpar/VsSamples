@@ -14,6 +14,7 @@ using Microsoft.VisualStudio.Editor;
 using System.Reflection;
 using Microsoft.VisualStudio.TextManager.Interop;
 using System.Runtime.InteropServices;
+using EditorUtils;
 
 namespace ProjectionBufferDemo.Implementation
 {
@@ -25,105 +26,84 @@ namespace ProjectionBufferDemo.Implementation
         private readonly IVsEditorAdaptersFactoryService _vsEditorAdaptersFactoryService;
         private readonly ITextDocumentFactoryService _textDocumentFactoryService;
         private readonly ITextBufferFactoryService _textBufferFactoryService;
+        private readonly IOleServiceProvider _oleServiceProvider;
+        private readonly IProtectedOperations _protectedOperations;
 
         [ImportingConstructor]
         internal EditorFactory(
             SVsServiceProvider vsServiceProvider,
             IVsEditorAdaptersFactoryService vsEditorAdaptersAdapterFactory,
             ITextDocumentFactoryService textDocumentFactoryService,
-            ITextBufferFactoryService textBufferFactoryService)
+            ITextBufferFactoryService textBufferFactoryService,
+            [EditorUtilsImport] IProtectedOperations protectedOperations)
         {
             _vsEditorFactory = new VsEditorFactory();
             _vsServiceProvider = vsServiceProvider;
             _vsEditorAdaptersFactoryService = vsEditorAdaptersAdapterFactory;
             _textDocumentFactoryService = textDocumentFactoryService;
             _textBufferFactoryService = textBufferFactoryService;
+            _oleServiceProvider = _vsServiceProvider.GetService<IOleServiceProvider, IOleServiceProvider>();
+            _protectedOperations = protectedOperations;
         }
 
+        /// <summary>
+        /// Generate a unique string based on the specified name.  This name isn't displayed to the user
+        /// just make it unique
+        /// </summary>
         private static string GetMoniker(string baseName)
         {
-            // TODO: should be unique
-            return String.Format("{0}.{1}.testext", baseName, DateTime.Now.Ticks);
+            var guid = Guid.NewGuid().ToString("D");
+            return String.Format("{0}.{1}.hidden", baseName, guid);
         }
 
-        private bool OpenInNewWindow(string name, ITextBuffer textBuffer)
+        private bool OpenInNewWindow(
+            ITextBuffer textBuffer,
+            string name,
+            Guid? editorTypeGuid = null,
+            Guid? languageServiceGuid = null,
+            Guid? logicalViewGuid = null)
         {
             var moniker = GetMoniker(name);
-            IVsUIHierarchy vsUiHierarchy;
-            uint itemId;
-            if (!TryCreateHierarchy(moniker, out vsUiHierarchy, out itemId))
-            {
-                return false;
-            }
-
             var uiShell = _vsServiceProvider.GetService<SVsUIShell, IVsUIShell>();
             var uiShellOpenDocument = _vsServiceProvider.GetService<SVsUIShellOpenDocument, IVsUIShellOpenDocument>();
 
             IntPtr punkTextBuffer = IntPtr.Zero;
             uint documentCookie = VSConstants.VSCOOKIE_NIL;
-
             try
             {
+                IVsUIHierarchy vsUiHierarchy;
+                uint itemId;
+                CreateHierarchy(moniker, out vsUiHierarchy, out itemId);
+
                 // Wrap the result's ITextBuffer so that it can be used with the old VS APIs
-                var oleServiceProvider = _vsServiceProvider.GetService<IOleServiceProvider, IOleServiceProvider>();
-                var vsTextBuffer = _vsEditorAdaptersFactoryService.CreateVsTextBufferAdapter(oleServiceProvider, textBuffer.ContentType);
-                var textDocument = _textDocumentFactoryService.CreateTextDocument(textBuffer, name);
-
-                // TODO: Should I set a language service?   If we do it must come before creating the code
-                // window below .  Maybe make it customizable
-
-                // HACK OF EVIL HACKS: Since there is currently no way to create a text buffer shim
-                // for an ITextBuffer that we have already created, we have to create an empty shim,
-                // and initialize its underlying ITextBuffer ourselves via reflection
-                var vsTextBufferType = vsTextBuffer.GetType();
-                vsTextBufferType.GetField("_documentTextBuffer", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vsTextBuffer, textBuffer);
-                vsTextBufferType.GetField("_surfaceTextBuffer", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vsTextBuffer, textBuffer);
-                vsTextBufferType.GetField("_textDocument", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vsTextBuffer, textDocument);
-                vsTextBufferType.GetMethod("InitializeDocumentTextBuffer", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(vsTextBuffer, null);
-                
-                /*
-                var hr = vsTextBuffer.SetStateFlags((uint)BUFFERSTATEFLAGS.BSF_USER_READONLY;
-                if (ErrorHandler.Failed(hr))
-                {
-                    return false;
-                }
-                */
-
-                // TODO: Set the text view roles now.  Need to do it on the IVsTextBuffer likely
+                var vsTextBuffer = CreateVsTextBuffer(textBuffer, name, languageServiceGuid);
 
                 // Register and obtain a read lock on the document in the running document
                 // table so that it stays alive even though it doesn't have an associated
                 // editor.
-                if (!TryRegisterAndReadLockDocument(moniker, vsTextBuffer, out documentCookie))
-                {
-                    return false;
-                }
+                documentCookie = RegisterAndReadLockDocument(moniker, vsTextBuffer);
 
                 // Open the text buffer in a new window.  NOTE: The reason we need a hierarchy and an
                 // itemId is that the IVsUIShellOpenDocument will search for the project that can
                 // open the document unless we tell it the context (miscellaneous files).
                 punkTextBuffer = Marshal.GetIUnknownForObject(vsTextBuffer);
-                IVsWindowFrame vsWindowFrame;
 
-                // TODO: Let the editor guid be customizable
-                var editorType = VSConstants.GUID_TextEditorFactory;
-                var guidLogicalView = VSConstants.LOGVIEWID.TextView_guid;
+                IVsWindowFrame vsWindowFrame;
+                var editorType = editorTypeGuid ?? VSConstants.GUID_TextEditorFactory;
+                var logicalView = logicalViewGuid ?? VSConstants.LOGVIEWID.TextView_guid;
                 var hr = uiShellOpenDocument.OpenSpecificEditor(
                     grfOpenSpecific: 0,
                     pszMkDocument: moniker,
                     rguidEditorType: editorType,
                     pszPhysicalView: "Code",
-                    rguidLogicalView: guidLogicalView,
+                    rguidLogicalView: logicalView,
                     pszOwnerCaption: name,
                     pHier: vsUiHierarchy,
                     itemid: itemId,
                     punkDocDataExisting: punkTextBuffer,
-                    pSPHierContext: oleServiceProvider,
+                    pSPHierContext: _oleServiceProvider,
                     ppWindowFrame: out vsWindowFrame);
-                if (ErrorHandler.Failed(hr))
-                {
-                    return false;
-                }
+                ErrorHandler.ThrowOnFailure(hr);
 
                 var vsRunningDocumentTable = _vsServiceProvider.GetService<SVsRunningDocumentTable, IVsRunningDocumentTable>();
                 vsRunningDocumentTable.ModifyDocumentFlags(
@@ -137,6 +117,11 @@ namespace ProjectionBufferDemo.Implementation
                 }
 
                 return true;
+            }
+            catch (Exception ex)
+            {
+                _protectedOperations.Report(ex);
+                return false;
             }
             finally
             {
@@ -156,10 +141,38 @@ namespace ProjectionBufferDemo.Implementation
         }
 
         /// <summary>
+        /// Create an IVsTextBuffer instance and populate it with the existing ITextBuffer value
+        /// </summary>
+        private IVsTextBuffer CreateVsTextBuffer(ITextBuffer textBuffer, string name, Guid? languageServiceGuid)
+        {
+            // Wrap the result's ITextBuffer so that it can be used with the old VS APIs
+            var vsTextBuffer = _vsEditorAdaptersFactoryService.CreateVsTextBufferAdapter(_oleServiceProvider, textBuffer.ContentType);
+            var textDocument = _textDocumentFactoryService.CreateTextDocument(textBuffer, name);
+
+            // HACK OF EVIL HACKS: Since there is currently no way to create a text buffer shim
+            // for an ITextBuffer that we have already created, we have to create an empty shim,
+            // and initialize its underlying ITextBuffer ourselves via reflection
+            var vsTextBufferType = vsTextBuffer.GetType();
+            vsTextBufferType.GetField("_documentTextBuffer", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vsTextBuffer, textBuffer);
+            vsTextBufferType.GetField("_surfaceTextBuffer", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vsTextBuffer, textBuffer);
+            vsTextBufferType.GetField("_textDocument", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vsTextBuffer, textDocument);
+            vsTextBufferType.GetMethod("InitializeDocumentTextBuffer", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(vsTextBuffer, null);
+
+            // If a language service was specified then attach it now
+            if (languageServiceGuid.HasValue)
+            {
+                var id = languageServiceGuid.Value;
+                ErrorHandler.ThrowOnFailure(vsTextBuffer.SetLanguageServiceID(ref id));
+            }
+
+            return vsTextBuffer;
+        }
+
+        /// <summary>
         /// This will add a file to the misc folders without actually opening the document in 
         /// Visual Studio
         /// </summary>
-        private bool TryCreateHierarchy(string moniker, out IVsUIHierarchy vsUiHierarchy, out uint itemId)
+        private void CreateHierarchy(string moniker, out IVsUIHierarchy vsUiHierarchy, out uint itemId)
         {
             vsUiHierarchy = null;
             itemId = VSConstants.VSITEMID_NIL;
@@ -181,52 +194,43 @@ namespace ProjectionBufferDemo.Implementation
                 pszEditorCaption: null,
                 pfDefaultPosition: out defaultPosition,
                 ppWindowFrame: out dummyWindowFrame);
-            if (ErrorHandler.Failed(hr))
-            {
-                return false;
-            }
-
             ErrorHandler.ThrowOnFailure(hr);
 
             // Get the hierarchy for the document we added to the miscellaneous files project
             IVsProject vsProject;
             hr = vsExternalFilesManager.GetExternalFilesProject(out vsProject);
-            if (ErrorHandler.Failed(hr))
-            {
-                return false;
-            }
+            ErrorHandler.ThrowOnFailure(hr);
 
             int found;
             VSDOCUMENTPRIORITY[] priority = new VSDOCUMENTPRIORITY[1];
             hr = vsProject.IsDocumentInProject(moniker, out found, priority, out itemId);
-            if (ErrorHandler.Failed(hr) ||
-                0 == found ||
-                VSConstants.VSITEMID_NIL == itemId)
+            ErrorHandler.ThrowOnFailure(hr);
+            if (0 == found || VSConstants.VSITEMID_NIL == itemId)
             {
-                return false;
+                throw new Exception("Could not find in project");
             }
 
             vsUiHierarchy = (IVsUIHierarchy)vsProject;
-            return true;
         }
 
-        private bool TryRegisterAndReadLockDocument(string moniker, IVsTextBuffer vsTextBuffer, out uint documentCookie)
+        private uint RegisterAndReadLockDocument(string moniker, IVsTextBuffer vsTextBuffer)
         {
             var runningDocumentTable = _vsServiceProvider.GetService<SVsRunningDocumentTable, IVsRunningDocumentTable>();
 
-            documentCookie = VSConstants.VSCOOKIE_NIL;
+            uint documentCookie = VSConstants.VSCOOKIE_NIL;
             IntPtr punkDocData = IntPtr.Zero;
             try
             {
                 punkDocData = Marshal.GetIUnknownForObject(vsTextBuffer);
                 var hr = runningDocumentTable.RegisterAndLockDocument(
-                    (uint)_VSRDTFLAGS.RDT_ReadLock, 
+                    (uint)_VSRDTFLAGS.RDT_ReadLock,
                     moniker,
-                    null, 
-                    VSConstants.VSITEMID_NIL, 
-                    punkDocData, 
+                    null,
+                    VSConstants.VSITEMID_NIL,
+                    punkDocData,
                     out documentCookie);
-                return ErrorHandler.Succeeded(hr);
+                ErrorHandler.ThrowOnFailure(hr);
+                return documentCookie;
             }
             finally
             {
@@ -255,9 +259,9 @@ namespace ProjectionBufferDemo.Implementation
             get { return _textBufferFactoryService; }
         }
 
-        bool IEditorFactory.OpenInNewWindow(string name, ITextBuffer textBuffer)
+        bool IEditorFactory.OpenInNewWindow(ITextBuffer textBuffer, string name, Guid? editorTypeId, Guid? logicalViewId, Guid? languageServiceId)
         {
-            return OpenInNewWindow(name, textBuffer);
+            return OpenInNewWindow(textBuffer, name, editorTypeId, logicalViewId, languageServiceId);
         }
 
         #endregion
