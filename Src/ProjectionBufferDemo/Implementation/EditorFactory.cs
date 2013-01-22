@@ -43,7 +43,7 @@ namespace ProjectionBufferDemo.Implementation
         private static string GetMoniker(string baseName)
         {
             // TODO: should be unique
-            return String.Format("{0}.testext", baseName);
+            return String.Format("{0}.{1}.testext", baseName, DateTime.Now.Ticks);
         }
 
         private bool OpenInNewWindow(string name, ITextBuffer textBuffer)
@@ -102,7 +102,7 @@ namespace ProjectionBufferDemo.Implementation
                 // Open the text buffer in a new window.  NOTE: The reason we need a hierarchy and an
                 // itemId is that the IVsUIShellOpenDocument will search for the project that can
                 // open the document unless we tell it the context (miscellaneous files).
-                punkTextBuffer = Marshal.GetIUnknownForObject(textBuffer);
+                punkTextBuffer = Marshal.GetIUnknownForObject(vsTextBuffer);
                 IVsWindowFrame vsWindowFrame;
 
                 // TODO: Let the editor guid be customizable
@@ -133,6 +133,7 @@ namespace ProjectionBufferDemo.Implementation
                 if (vsWindowFrame != null)
                 {
                     vsWindowFrame.SetProperty((int)__VSFPROPID5.VSFPROPID_IsProvisional, true);
+                    vsWindowFrame.Show();
                 }
 
                 return true;
