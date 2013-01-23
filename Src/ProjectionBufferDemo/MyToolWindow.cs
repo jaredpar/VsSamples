@@ -7,6 +7,13 @@ using System.Windows;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Text.Editor;
+using Microsoft.VisualStudio.OLE.Interop;
+using Microsoft.VisualStudio.Editor;
+using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.TextManager.Interop;
+using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
+using Microsoft.VisualStudio;
 
 namespace ProjectionBufferDemo
 {
@@ -20,8 +27,16 @@ namespace ProjectionBufferDemo
     /// implementation of the IVsUIElementPane interface.
     /// </summary>
     [Guid("9deee938-cb7c-4f5a-90f4-6c70d3ac07bf")]
-    public class MyToolWindow : ToolWindowPane
+    public class MyToolWindow : ToolWindowPane, IOleCommandTarget
     {
+        // HACK
+        internal static ITextEditorFactoryService TextEditorFactoryService;
+        internal static IVsEditorAdaptersFactoryService VsEditorAdaptersFactoryService;
+        internal static IOleServiceProvider OleServiceProvider;
+
+        private readonly ITextBuffer _textBuffer;
+        private readonly IVsTextBuffer _vsTextBuffer;
+
         /// <summary>
         /// Standard constructor for the tool window.
         /// </summary>
@@ -41,7 +56,60 @@ namespace ProjectionBufferDemo
             // This is the user control hosted by the tool window; Note that, even if this class implements IDisposable,
             // we are not calling Dispose on this object. This is because ToolWindowPane calls Dispose on 
             // the object returned by the Content property.
-            base.Content = new MyControl();
+            _vsTextBuffer = VsEditorAdaptersFactoryService.CreateVsTextBufferAdapter(OleServiceProvider);
+
+            // Set the content type 
+            var contentTypeKey = new Guid(0x1beb4195, 0x98f4, 0x4589, 0x80, 0xe0, 0x48, 12, 0xe3, 0x2f, 240, 0x59);
+            var vsUserData = (IVsUserData)_vsTextBuffer;
+            vsUserData.SetData(ref contentTypeKey, "text");
+
+            _vsTextBuffer.InitializeContent("", 0);
+            _textBuffer = VsEditorAdaptersFactoryService.GetDataBuffer(_vsTextBuffer);
+
+            // Set up the ITextView shim
+            var textViewRoles = TextEditorFactoryService.CreateTextViewRoleSet(
+                PredefinedTextViewRoles.Interactive,
+                PredefinedTextViewRoles.Editable,
+                PredefinedTextViewRoles.Document,
+                PredefinedTextViewRoles.PrimaryDocument);
+            var vsTextView = VsEditorAdaptersFactoryService.CreateVsTextViewAdapter(OleServiceProvider, textViewRoles);
+            vsTextView.Initialize((IVsTextLines)_vsTextBuffer, IntPtr.Zero, 0, null);
+
+            var wpfTextViewHost = VsEditorAdaptersFactoryService.GetWpfTextViewHost(vsTextView);
+            base.Content = wpfTextViewHost.HostControl;
+
+            var oleCommandTarget = _vsTextBuffer as IOleCommandTarget;
+            if (oleCommandTarget != null)
+            {
+                ToolBarCommandTarget = oleCommandTarget;
+            }
+        }
+
+        int IOleCommandTarget.Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+        {
+            var oleCommandTarget = _vsTextBuffer as IOleCommandTarget;
+            if (oleCommandTarget != null)
+            {
+                return oleCommandTarget.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+            }
+
+            return (int)Microsoft.VisualStudio.OLE.Interop.Constants.OLECMDERR_E_NOTSUPPORTED;
+        }
+
+        /// <summary>
+        /// When our tool window is active it will be the 'focus command target' of the shell's command route, as such we need to set the state
+        /// of any commands we want here and forward the rest to the editor (since most all typing is translated into a command for the editor to
+        /// deal with).
+        /// </summary>
+        int IOleCommandTarget.QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText)
+        {
+            var oleCommandTarget = _vsTextBuffer as IOleCommandTarget;
+            if (oleCommandTarget != null)
+            {
+                return oleCommandTarget.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
+            }
+
+            return (int)Microsoft.VisualStudio.OLE.Interop.Constants.OLECMDERR_E_NOTSUPPORTED;
         }
     }
 }

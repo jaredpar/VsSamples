@@ -10,6 +10,9 @@ using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.Text.Editor;
+using Microsoft.VisualStudio.Editor;
+using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 
 namespace ProjectionBufferDemo
 {
@@ -43,6 +46,8 @@ namespace ProjectionBufferDemo
     public sealed class ProjectionBufferDemoPackage : Package
     {
         private IEditorFactory _editorFactory;
+        private ITextEditorFactoryService _textEditorFactoryService;
+        private IVsEditorAdaptersFactoryService _vsEditorAdaptersFactoryService;
 
         /// <summary>
         /// Default constructor of the package.
@@ -63,6 +68,15 @@ namespace ProjectionBufferDemo
         /// </summary>
         private void ShowToolWindow(object sender, EventArgs e)
         {
+            var componentModel = (IComponentModel)GetService(typeof(SComponentModel));
+            var export = componentModel.DefaultExportProvider;
+            var vsServiceProvider = export.GetExportedValue<SVsServiceProvider>();
+
+            MyToolWindow.TextEditorFactoryService = export.GetExportedValue<ITextEditorFactoryService>();
+            MyToolWindow.VsEditorAdaptersFactoryService = export.GetExportedValue<IVsEditorAdaptersFactoryService>();
+            MyToolWindow.OleServiceProvider = vsServiceProvider.GetService<SDTE, IOleServiceProvider>();
+
+
             // Get the instance number 0 of this tool window. This window is single instance so this instance
             // is actually the only one.
             // The last flag is set to true so that if the tool window does not exists it will be created.
@@ -71,6 +85,14 @@ namespace ProjectionBufferDemo
             {
                 throw new NotSupportedException(Resources.CanNotCreateWindow);
             }
+
+            // TODO: This should only be done once
+            var myToolWindow = (MyToolWindow)window;
+            var textViewHost = _textEditorFactoryService.CreateTextViewHost(
+                _textEditorFactoryService.CreateTextView(),
+                setFocus: false);
+            myToolWindow.Content = textViewHost.HostControl;
+
             IVsWindowFrame windowFrame = (IVsWindowFrame)window.Frame;
             Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
         }
@@ -96,6 +118,7 @@ namespace ProjectionBufferDemo
                 CommandID menuCommandID = new CommandID(GuidList.guidProjectionBufferDemoCmdSet, (int)PkgCmdIDList.cmdidCreateProjection);
                 MenuCommand menuItem = new MenuCommand(MenuItemCallback, menuCommandID );
                 mcs.AddCommand( menuItem );
+
                 // Create the command for the tool window
                 CommandID toolwndCommandID = new CommandID(GuidList.guidProjectionBufferDemoCmdSet, (int)PkgCmdIDList.cmdidProjectionViewer);
                 MenuCommand menuToolWin = new MenuCommand(ShowToolWindow, toolwndCommandID);
@@ -103,7 +126,10 @@ namespace ProjectionBufferDemo
             }
 
             var componentModel = (IComponentModel)GetService(typeof(SComponentModel));
-            _editorFactory = componentModel.DefaultExportProvider.GetExportedValue<IEditorFactory>();
+            var export = componentModel.DefaultExportProvider;
+            _editorFactory = export.GetExportedValue<IEditorFactory>();
+            _textEditorFactoryService = export.GetExportedValue<ITextEditorFactoryService>();
+            _vsEditorAdaptersFactoryService = export.GetExportedValue<IVsEditorAdaptersFactoryService>();
 
 
             // TODO: Remove.  Layering violation
