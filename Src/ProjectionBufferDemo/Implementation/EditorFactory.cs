@@ -15,6 +15,7 @@ using System.Reflection;
 using Microsoft.VisualStudio.TextManager.Interop;
 using System.Runtime.InteropServices;
 using EditorUtils;
+using Microsoft.VisualStudio.Text.Editor;
 
 namespace ProjectionBufferDemo.Implementation
 {
@@ -24,6 +25,7 @@ namespace ProjectionBufferDemo.Implementation
         private readonly VsEditorFactory _vsEditorFactory;
         private readonly SVsServiceProvider _vsServiceProvider;
         private readonly IVsEditorAdaptersFactoryService _vsEditorAdaptersFactoryService;
+        private readonly ITextEditorFactoryService _textEditorFactoryService;
         private readonly ITextDocumentFactoryService _textDocumentFactoryService;
         private readonly ITextBufferFactoryService _textBufferFactoryService;
         private readonly IOleServiceProvider _oleServiceProvider;
@@ -33,15 +35,17 @@ namespace ProjectionBufferDemo.Implementation
         internal EditorFactory(
             SVsServiceProvider vsServiceProvider,
             IVsEditorAdaptersFactoryService vsEditorAdaptersAdapterFactory,
-            ITextDocumentFactoryService textDocumentFactoryService,
             ITextBufferFactoryService textBufferFactoryService,
+            ITextDocumentFactoryService textDocumentFactoryService,
+            ITextEditorFactoryService textEditorFactoryService,
             [EditorUtilsImport] IProtectedOperations protectedOperations)
         {
             _vsEditorFactory = new VsEditorFactory();
             _vsServiceProvider = vsServiceProvider;
             _vsEditorAdaptersFactoryService = vsEditorAdaptersAdapterFactory;
-            _textDocumentFactoryService = textDocumentFactoryService;
             _textBufferFactoryService = textBufferFactoryService;
+            _textDocumentFactoryService = textDocumentFactoryService;
+            _textEditorFactoryService = textEditorFactoryService;
             _oleServiceProvider = _vsServiceProvider.GetService<IOleServiceProvider, IOleServiceProvider>();
             _protectedOperations = protectedOperations;
         }
@@ -143,7 +147,7 @@ namespace ProjectionBufferDemo.Implementation
         /// <summary>
         /// Create an IVsTextBuffer instance and populate it with the existing ITextBuffer value
         /// </summary>
-        private IVsTextBuffer CreateVsTextBuffer(ITextBuffer textBuffer, string name, Guid? languageServiceGuid)
+        private IVsTextBuffer CreateVsTextBuffer(ITextBuffer textBuffer, string name)
         {
             // Wrap the result's ITextBuffer so that it can be used with the old VS APIs
             var vsTextBuffer = _vsEditorAdaptersFactoryService.CreateVsTextBufferAdapter(_oleServiceProvider, textBuffer.ContentType);
@@ -158,6 +162,16 @@ namespace ProjectionBufferDemo.Implementation
             vsTextBufferType.GetField("_textDocument", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vsTextBuffer, textDocument);
             vsTextBufferType.GetMethod("InitializeDocumentTextBuffer", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(vsTextBuffer, null);
 
+            return vsTextBuffer;
+        }
+
+        /// <summary>
+        /// Create an IVsTextBuffer instance and populate it with the existing ITextBuffer value
+        /// </summary>
+        private IVsTextBuffer CreateVsTextBuffer(ITextBuffer textBuffer, string name, Guid? languageServiceGuid)
+        {
+            var vsTextBuffer = CreateVsTextBuffer(textBuffer, name);
+
             // If a language service was specified then attach it now
             if (languageServiceGuid.HasValue)
             {
@@ -166,6 +180,16 @@ namespace ProjectionBufferDemo.Implementation
             }
 
             return vsTextBuffer;
+        }
+
+        private IVsTextView CreateVsTextView(IVsTextBuffer vsTextBuffer, params string[] textViewRoles)
+        {
+            // Set up the ITextView shim
+            var textViewRoleSet = _textEditorFactoryService.CreateTextViewRoleSet(textViewRoles);
+            var vsTextView = _vsEditorAdaptersFactoryService.CreateVsTextViewAdapter(_oleServiceProvider, textViewRoleSet);
+            var hr = vsTextView.Initialize((IVsTextLines)vsTextBuffer, IntPtr.Zero, 0, null);
+            ErrorHandler.ThrowOnFailure(hr);
+            return vsTextView;
         }
 
         /// <summary>
@@ -262,6 +286,16 @@ namespace ProjectionBufferDemo.Implementation
         bool IEditorFactory.OpenInNewWindow(ITextBuffer textBuffer, string name, Guid? editorTypeId, Guid? logicalViewId, Guid? languageServiceId)
         {
             return OpenInNewWindow(textBuffer, name, editorTypeId, logicalViewId, languageServiceId);
+        }
+
+        IVsTextBuffer IEditorFactory.CreateVsTextBuffer(ITextBuffer textBuffer, string name)
+        {
+            return CreateVsTextBuffer(textBuffer, name);
+        }
+
+        IVsTextView IEditorFactory.CreateVsTextView(IVsTextBuffer vsTextBuffer, params string[] textViewRoles)
+        {
+            return CreateVsTextView(vsTextBuffer, textViewRoles);
         }
 
         #endregion

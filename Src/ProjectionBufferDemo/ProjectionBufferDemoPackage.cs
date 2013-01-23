@@ -75,7 +75,7 @@ namespace ProjectionBufferDemo
             MyToolWindow.TextEditorFactoryService = export.GetExportedValue<ITextEditorFactoryService>();
             MyToolWindow.VsEditorAdaptersFactoryService = export.GetExportedValue<IVsEditorAdaptersFactoryService>();
             MyToolWindow.OleServiceProvider = vsServiceProvider.GetService<SDTE, IOleServiceProvider>();
-
+            MyToolWindow.EditorFactory = _editorFactory;
 
             // Get the instance number 0 of this tool window. This window is single instance so this instance
             // is actually the only one.

@@ -33,6 +33,7 @@ namespace ProjectionBufferDemo
         internal static ITextEditorFactoryService TextEditorFactoryService;
         internal static IVsEditorAdaptersFactoryService VsEditorAdaptersFactoryService;
         internal static IOleServiceProvider OleServiceProvider;
+        internal static IEditorFactory EditorFactory;
 
         private readonly ITextBuffer _textBuffer;
         private readonly IVsTextBuffer _vsTextBuffer;
@@ -66,14 +67,12 @@ namespace ProjectionBufferDemo
             _vsTextBuffer.InitializeContent("", 0);
             _textBuffer = VsEditorAdaptersFactoryService.GetDataBuffer(_vsTextBuffer);
 
-            // Set up the ITextView shim
-            var textViewRoles = TextEditorFactoryService.CreateTextViewRoleSet(
+            var vsTextView = EditorFactory.CreateVsTextView(
+                _vsTextBuffer, 
                 PredefinedTextViewRoles.Interactive,
                 PredefinedTextViewRoles.Editable,
                 PredefinedTextViewRoles.Document,
                 PredefinedTextViewRoles.PrimaryDocument);
-            var vsTextView = VsEditorAdaptersFactoryService.CreateVsTextViewAdapter(OleServiceProvider, textViewRoles);
-            vsTextView.Initialize((IVsTextLines)_vsTextBuffer, IntPtr.Zero, 0, null);
 
             var wpfTextViewHost = VsEditorAdaptersFactoryService.GetWpfTextViewHost(vsTextView);
             base.Content = wpfTextViewHost.HostControl;
