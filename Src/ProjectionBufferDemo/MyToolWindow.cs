@@ -27,16 +27,9 @@ namespace ProjectionBufferDemo
     /// implementation of the IVsUIElementPane interface.
     /// </summary>
     [Guid("9deee938-cb7c-4f5a-90f4-6c70d3ac07bf")]
-    public class MyToolWindow : ToolWindowPane, IOleCommandTarget
+    public class MyToolWindow : ToolWindowPane
     {
-        // HACK
-        internal static ITextEditorFactoryService TextEditorFactoryService;
-        internal static IVsEditorAdaptersFactoryService VsEditorAdaptersFactoryService;
-        internal static IOleServiceProvider OleServiceProvider;
-        internal static IEditorFactory EditorFactory;
-
-        private readonly ITextBuffer _textBuffer;
-        private readonly IVsTextBuffer _vsTextBuffer;
+        private readonly EditorControl _editorControl;
 
         /// <summary>
         /// Standard constructor for the tool window.
@@ -44,46 +37,53 @@ namespace ProjectionBufferDemo
         public MyToolWindow() :
             base(null)
         {
-            // Set the window title reading it from the resources.
-            this.Caption = Resources.ToolWindowTitle;
-            // Set the image that will appear on the tab of the window frame
-            // when docked with an other window
-            // The resource ID correspond to the one defined in the resx file
-            // while the Index is the offset in the bitmap strip. Each image in
-            // the strip being 16x16.
-            this.BitmapResourceID = 301;
-            this.BitmapIndex = 1;
+            Caption = Resources.ToolWindowTitle;
+            BitmapResourceID = 301;
+            BitmapIndex = 1;
+
+            _editorControl = new EditorControl();
+            Content = _editorControl;
+        }
+
+        public void ResetDisplay(IOleServiceProvider oleServiceProvider)
+        {
+            var serviceProvider = oleServiceProvider.GetServiceProvider();
+            var vsEditorAdaptersFactoryService = serviceProvider.GetExportedValue<IVsEditorAdaptersFactoryService>();
+            var editorFactory = serviceProvider.GetExportedValue<IEditorFactory>();
 
             // This is the user control hosted by the tool window; Note that, even if this class implements IDisposable,
             // we are not calling Dispose on this object. This is because ToolWindowPane calls Dispose on 
             // the object returned by the Content property.
-            _vsTextBuffer = VsEditorAdaptersFactoryService.CreateVsTextBufferAdapter(OleServiceProvider);
+            var vsTextBuffer = vsEditorAdaptersFactoryService.CreateVsTextBufferAdapter(oleServiceProvider);
 
             // Set the content type 
             var contentTypeKey = new Guid(0x1beb4195, 0x98f4, 0x4589, 0x80, 0xe0, 0x48, 12, 0xe3, 0x2f, 240, 0x59);
-            var vsUserData = (IVsUserData)_vsTextBuffer;
+            var vsUserData = (IVsUserData)vsTextBuffer;
             vsUserData.SetData(ref contentTypeKey, "text");
 
-            _vsTextBuffer.InitializeContent("", 0);
-            _textBuffer = VsEditorAdaptersFactoryService.GetDataBuffer(_vsTextBuffer);
+            vsTextBuffer.InitializeContent("", 0);
+            var textBuffer = vsEditorAdaptersFactoryService.GetDataBuffer(vsTextBuffer);
 
-            var vsTextView = EditorFactory.CreateVsTextView(
-                _vsTextBuffer, 
+            var vsTextView = editorFactory.CreateVsTextView(
+                vsTextBuffer, 
                 PredefinedTextViewRoles.Interactive,
                 PredefinedTextViewRoles.Editable,
                 PredefinedTextViewRoles.Document,
                 PredefinedTextViewRoles.PrimaryDocument);
 
-            var wpfTextViewHost = VsEditorAdaptersFactoryService.GetWpfTextViewHost(vsTextView);
-            base.Content = wpfTextViewHost.HostControl;
+            var wpfTextViewHost = vsEditorAdaptersFactoryService.GetWpfTextViewHost(vsTextView);
+            _editorControl.TextViewControl = wpfTextViewHost.HostControl;
 
-            var oleCommandTarget = _vsTextBuffer as IOleCommandTarget;
+            /*
+            var oleCommandTarget = vsTextBuffer as IOleCommandTarget;
             if (oleCommandTarget != null)
             {
                 ToolBarCommandTarget = oleCommandTarget;
             }
+            */
         }
 
+        /*
         int IOleCommandTarget.Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
         {
             var oleCommandTarget = _vsTextBuffer as IOleCommandTarget;
@@ -110,5 +110,6 @@ namespace ProjectionBufferDemo
 
             return (int)Microsoft.VisualStudio.OLE.Interop.Constants.OLECMDERR_E_NOTSUPPORTED;
         }
+        */
     }
 }

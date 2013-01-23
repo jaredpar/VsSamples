@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Editor;
+using IServiceProvider = System.IServiceProvider;
 using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 
 namespace ProjectionBufferDemo
@@ -45,9 +46,7 @@ namespace ProjectionBufferDemo
     [ProvideEditorExtensionAttribute(typeof(ProjectionBufferDemo.Implementation.VsEditorFactory), ".myext", 32, NameResourceID = 113)]
     public sealed class ProjectionBufferDemoPackage : Package
     {
-        private IEditorFactory _editorFactory;
-        private ITextEditorFactoryService _textEditorFactoryService;
-        private IVsEditorAdaptersFactoryService _vsEditorAdaptersFactoryService;
+        private IServiceProvider _serviceProvider;
 
         /// <summary>
         /// Default constructor of the package.
@@ -68,30 +67,16 @@ namespace ProjectionBufferDemo
         /// </summary>
         private void ShowToolWindow(object sender, EventArgs e)
         {
-            var componentModel = (IComponentModel)GetService(typeof(SComponentModel));
-            var export = componentModel.DefaultExportProvider;
-            var vsServiceProvider = export.GetExportedValue<SVsServiceProvider>();
-
-            MyToolWindow.TextEditorFactoryService = export.GetExportedValue<ITextEditorFactoryService>();
-            MyToolWindow.VsEditorAdaptersFactoryService = export.GetExportedValue<IVsEditorAdaptersFactoryService>();
-            MyToolWindow.OleServiceProvider = vsServiceProvider.GetService<SDTE, IOleServiceProvider>();
-            MyToolWindow.EditorFactory = _editorFactory;
-
             // Get the instance number 0 of this tool window. This window is single instance so this instance
             // is actually the only one.
             // The last flag is set to true so that if the tool window does not exists it will be created.
-            ToolWindowPane window = this.FindToolWindow(typeof(MyToolWindow), 0, true);
+            MyToolWindow window = (MyToolWindow)this.FindToolWindow(typeof(MyToolWindow), 0, true);
             if ((null == window) || (null == window.Frame))
             {
                 throw new NotSupportedException(Resources.CanNotCreateWindow);
             }
 
-            // TODO: This should only be done once
-            var myToolWindow = (MyToolWindow)window;
-            var textViewHost = _textEditorFactoryService.CreateTextViewHost(
-                _textEditorFactoryService.CreateTextView(),
-                setFocus: false);
-            myToolWindow.Content = textViewHost.HostControl;
+            window.ResetDisplay(_serviceProvider.GetOleServiceProvider());
 
             IVsWindowFrame windowFrame = (IVsWindowFrame)window.Frame;
             Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
@@ -127,15 +112,14 @@ namespace ProjectionBufferDemo
 
             var componentModel = (IComponentModel)GetService(typeof(SComponentModel));
             var export = componentModel.DefaultExportProvider;
-            _editorFactory = export.GetExportedValue<IEditorFactory>();
-            _textEditorFactoryService = export.GetExportedValue<ITextEditorFactoryService>();
-            _vsEditorAdaptersFactoryService = export.GetExportedValue<IVsEditorAdaptersFactoryService>();
+            _serviceProvider = export.GetExportedValue<SVsServiceProvider>();
 
+            var editorFactory = export.GetExportedValue<IEditorFactory>();
 
             // TODO: Remove.  Layering violation
-            ((ProjectionBufferDemo.Implementation.VsEditorFactory)_editorFactory.VsEditorFactory).Package = this;
+            ((ProjectionBufferDemo.Implementation.VsEditorFactory)editorFactory.VsEditorFactory).Package = this;
 
-            RegisterEditorFactory(_editorFactory.VsEditorFactory);
+            RegisterEditorFactory(editorFactory.VsEditorFactory);
         }
         #endregion
 
@@ -147,10 +131,11 @@ namespace ProjectionBufferDemo
         private void MenuItemCallback(object sender, EventArgs e)
         {
             // Show a Message Box to prove we were here
-            var textBuffer = _editorFactory.TextBufferFactoryService.CreateTextBuffer();
+            var editorFactory = _serviceProvider.GetExportedValue<IEditorFactory>();
+            var textBuffer = editorFactory.TextBufferFactoryService.CreateTextBuffer();
             textBuffer.Replace(new Span(0, 0), "This is my victory");
             //_editorFactory.OpenInNewWindow(textBuffer, "Test.txt", languageServiceId: csharpLanguageServiceId);
-            _editorFactory.OpenInNewWindow(textBuffer, "Test.txt");
+            editorFactory.OpenInNewWindow(textBuffer, "Test.txt");
 
             /*
             IVsUIShell uiShell = (IVsUIShell)GetService(typeof(SVsUIShell));

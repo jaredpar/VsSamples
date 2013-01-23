@@ -17,19 +17,17 @@ namespace ProjectionBufferDemo
     /// <summary>
     /// Interaction logic for MyControl.xaml
     /// </summary>
-    public partial class MyControl : UserControl
+    public partial class EditorControl : UserControl
     {
-        public MyControl()
+        public Control TextViewControl
         {
-            InitializeComponent();
+            get { return (Control)_hostControl.Content; }
+            set { _hostControl.Content = value; }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1300:SpecifyMessageBoxOptions")]
-        private void button1_Click(object sender, RoutedEventArgs e)
+        public EditorControl()
         {
-            MessageBox.Show(string.Format(System.Globalization.CultureInfo.CurrentUICulture, "We are inside {0}.button1_Click()", this.ToString()),
-                            "Projection Viewer");
-
+            InitializeComponent();
         }
     }
 }
